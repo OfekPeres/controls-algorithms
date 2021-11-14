@@ -28,18 +28,17 @@ class BangBang:
         distToGoal = np.linalg.norm(self.car.pos - target)
         maxControlInputs = np.pi*distToGoal/(2*self.car.speed)
         # THINK ABOUT THIS CUTOFF CASE
-        print(self.car.pos)
         phis = []
         while distToGoal > self.car.l:
             phi = self.GetPhi(target)
             phis.append(phi)
             distToGoal = np.linalg.norm(self.car.pos - target)
             self.car.step(phi)
-            print("Phi: {}".format(phi))
-            print("Car Position: {}".format(self.car.pos))
-            print("Target: {}".format(target))
+            # print("Phi: {}".format(phi))
+            # print("Car Position: {}".format(self.car.pos))
+            # print("Target: {}".format(target))
 
-            print("Distance to Goal: {}".format(distToGoal))
+            # print("Distance to Goal: {}".format(distToGoal))
             # We think that the actual max length is pi*originaldistanceToGoal/2*car.speed
         return phis
     
