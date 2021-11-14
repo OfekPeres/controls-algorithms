@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from dubins_car import DubinsCar
+from ..dynamics.dubins_car import DubinsCar
 
 class BangBang:
     
@@ -47,27 +47,4 @@ class BangBang:
         u = []
         for point in self.points:
             u.extend(self.GetControlInputsToTarget(point))
-        return u
-        
-
-
-if __name__ == "__main__":
-    payloadFromFrontEnd = [{'x':40, 'y':40}, {'x':80, 'y':80}]
-    points = []
-    for point in payloadFromFrontEnd:
-        points.append(np.array([point['x'], point['y']]))
-
-    car = DubinsCar(10, 0, 0, 0*np.pi/4, 0, 10)
-
-    controller = BangBang(points, car)
-    traj = controller.GetControlTrajectory()
-
-    print("# of control inputs: {}".format(len(traj)))
-    print(traj)
-    print("0 control input: {}".format(np.where(traj == 0)))
-    print(np.where(traj <0))
-    # np.where(traj >0)
-    print("Final car position: {}".format(car.pos))
-
-
-        
+        return u        

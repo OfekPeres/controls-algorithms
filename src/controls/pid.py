@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from .dubins_car import DubinsCar
+from ..dynamics.dubins_car import DubinsCar
 
 class PID:
     
@@ -23,6 +23,7 @@ class PID:
         goalPoint = np.array([point['x'],point['y']])
         goalPoint = goalPoint / np.linalg.norm(goalPoint)
         thetaError = np.arccos(np.dot(carHeading,goalPoint))
+        
 
         
 
