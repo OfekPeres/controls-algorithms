@@ -32,11 +32,16 @@ class DubinsCar:
         """
         Given a target point, calculate the theta error
         """
+        # This step is highly important - get the vector pointing from the car 
+        # to the target point
         car2goal = self.pos - goalPoint
+        car2goal = car2goal / np.linalg.norm(car2goal)
         carHeading = np.array([np.cos(self.theta), np.sin(self.theta)])
         
-        car2goal = car2goal / np.linalg.norm(car2goal)
-
+        # Calculate the signed angle between two vectors (can potentially be 
+        # done with the "perpendicular dot product" but here is accomplished
+        # by utilizing code inspired by p5.js source code for the angleBetween
+        # function)
         theta = math.acos(min(1, max(-1, carHeading.dot(car2goal))))
         theta = theta * np.sign(np.cross(carHeading, car2goal)) or 1
         return theta
