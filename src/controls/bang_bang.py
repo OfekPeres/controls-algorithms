@@ -28,7 +28,7 @@ class BangBang:
         distToGoal = np.linalg.norm(self.car.pos - target)
         maxThetaDot = (self.car.speed/self.car.l)*np.tan(self.car.maxSteer)
         timeStepsToTurnHalfCircle = (np.pi)/(maxThetaDot) 
-        timeStepsToGoStraightToTarget = (distToGoal - 2*self.car.l/np.tan(self.car.maxSteer))/self.car.speed
+        timeStepsToGoStraightToTarget = distToGoal/self.car.speed
         maxControlInputs = timeStepsToTurnHalfCircle + timeStepsToGoStraightToTarget
         print("Max control inputs: {}".format(maxControlInputs))
         # THINK ABOUT THIS CUTOFF CASE
