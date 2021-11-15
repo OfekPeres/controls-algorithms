@@ -38,6 +38,6 @@ def testThetaError():
     print(np.rad2deg(thetaErrorRadians))
 
 if __name__ == "__main__":
-    # testBangBang()
+    testBangBang()
     # testStep()
     testThetaError()

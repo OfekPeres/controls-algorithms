@@ -26,7 +26,11 @@ class BangBang:
 
     def GetControlInputsToTarget(self, target):
         distToGoal = np.linalg.norm(self.car.pos - target)
-        maxControlInputs = np.pi*distToGoal/(2*self.car.speed)
+        maxThetaDot = (self.car.speed/self.car.l)*np.tan(self.car.maxSteer)
+        timeStepsToTurnHalfCircle = (np.pi)/(maxThetaDot) 
+        timeStepsToGoStraightToTarget = distToGoal/self.car.speed
+        maxControlInputs = timeStepsToGoStraightToTarget + timeStepsToGoStraightToTarget
+        print("Max control inputs: {}".format(maxControlInputs))
         # THINK ABOUT THIS CUTOFF CASE
         phis = []
         while distToGoal > self.car.l/2:
