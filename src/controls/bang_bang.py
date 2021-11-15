@@ -30,10 +30,10 @@ class BangBang:
         # THINK ABOUT THIS CUTOFF CASE
         phis = []
         while distToGoal > self.car.l/2:
-            self.car.step(phi)
             phi = self.GetPhi(target)
             phis.append(phi)
             distToGoal = np.linalg.norm(self.car.pos - target)
+            self.car.step(phi)
             # print("Phi: {}".format(phi))
             # print("Car Position: {}".format(self.car.pos))
             # print("Target: {}".format(target))
