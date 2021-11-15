@@ -28,22 +28,17 @@ class DubinsCar:
         self.theta = self.theta + theta_dot
 
 
-    def calcThetaError_old(self, goalPoint):
+    def calcThetaError(self, goalPoint):
         """
         Given a target point, calculate the theta error
         """
+        car2goal = self.pos - goalPoint
         carHeading = np.array([np.cos(self.theta), np.sin(self.theta)])
-        # thetaError = np.arccos(np.dot(carHeading,goalPoint))
-        angle = math.atan2( carHeading[0]*goalPoint[1] - carHeading[1]*goalPoint[0], 
-                            carHeading[0]*goalPoint[0]+carHeading[1]*goalPoint[1])
-        return angle
+        
+        car2goal = car2goal / np.linalg.norm(car2goal)
 
-
-    def calcThetaError(self, goalPoint):
-        carHeading = np.array([np.cos(self.theta), np.sin(self.theta)])
-        goalPoint = goalPoint / np.linalg.norm(goalPoint)
-        theta = math.acos(min(1, max(-1, carHeading.dot(goalPoint))))
-        theta = theta * np.sign(np.cross(carHeading, goalPoint)) or 1
+        theta = math.acos(min(1, max(-1, carHeading.dot(car2goal))))
+        theta = theta * np.sign(np.cross(carHeading, car2goal)) or 1
         return theta
 
 
