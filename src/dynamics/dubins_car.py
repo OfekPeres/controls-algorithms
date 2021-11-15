@@ -34,8 +34,10 @@ class DubinsCar:
         """
         carHeading = np.array([np.cos(self.theta), np.sin(self.theta)])
         goalPoint = goalPoint / np.linalg.norm(goalPoint)
-        thetaError = np.arccos(np.dot(carHeading,goalPoint))
-        return thetaError
+        # thetaError = np.arccos(np.dot(carHeading,goalPoint))
+        angle = math.atan2( carHeading[0]*goalPoint[1] - carHeading[1]*goalPoint[0], 
+                            carHeading[0]*goalPoint[0]+carHeading[1]*goalPoint[1])
+        return angle
 
 
 if __name__ == "__main__":
