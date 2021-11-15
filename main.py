@@ -32,8 +32,11 @@ def testThetaError():
     theta = 0
     theta = np.deg2rad(theta)
     car = DubinsCar(10,0,0,theta,0,1)
+    # goalPoint = np.array([100,200])
+    # controller = BangBang([[100,200], car])
     thetaErrorRadians = car.calcThetaError([1,-1])
     print(np.rad2deg(thetaErrorRadians))
+
 if __name__ == "__main__":
     # testBangBang()
     # testStep()
