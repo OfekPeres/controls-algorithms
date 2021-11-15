@@ -15,11 +15,10 @@ class BangBang:
 
     def GetPhi(self, target):
         thetaError = self.car.calcThetaError(target)
-        eps = 1e-3
-        if thetaError > eps:
+        if thetaError > 0:
             return self.car.maxSteer
 
-        elif thetaError < -eps:
+        elif thetaError < 0:
             return -self.car.maxSteer
         else:
             return 0
@@ -29,7 +28,7 @@ class BangBang:
         maxControlInputs = np.pi*distToGoal/(2*self.car.speed)
         # THINK ABOUT THIS CUTOFF CASE
         phis = []
-        while distToGoal > self.car.l:
+        while distToGoal > self.car.l/2:
             phi = self.GetPhi(target)
             phis.append(phi)
             distToGoal = np.linalg.norm(self.car.pos - target)
@@ -37,7 +36,8 @@ class BangBang:
             # print("Phi: {}".format(phi))
             # print("Car Position: {}".format(self.car.pos))
             # print("Target: {}".format(target))
-
+            if len(phis) > maxControlInputs*2:
+                break
             # print("Distance to Goal: {}".format(distToGoal))
             # We think that the actual max length is pi*originaldistanceToGoal/2*car.speed
         return phis
