@@ -15,7 +15,7 @@ class BangBang:
 
     def GetPhi(self, target):
         thetaError = self.car.calcThetaError(target)
-        eps = 1*np.pi/180
+        eps = 0.001*np.pi/180
         if thetaError > eps:
             return self.car.maxSteer
 
