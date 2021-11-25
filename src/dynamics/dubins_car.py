@@ -14,6 +14,7 @@ class DubinsCar:
         self.theta = theta
         self.prevState = None
         self.maxSteer = 0.5
+        self.turningRadius = self.l / math.tan(self.maxSteer)
 
 
     def step(self, u) -> None:

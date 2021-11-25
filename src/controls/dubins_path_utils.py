@@ -1,6 +1,34 @@
-from typing import List
 import numpy as np
 from math import atan, asin, atan2, sin, cos, sqrt
+from enum import Enum
+
+
+class Direction(Enum):
+    LEFT = 1
+    RIGHT = -1
+    STRAIGHT = 0
+
+
+def CalcDirectionalArcLength(c1: np.ndarray, p2: np.ndarray, p3: np.ndarray,
+                             direction: Direction) -> float:
+    """
+    @param c1 the circle of interest of the form (x,y,r)
+    @param p2 a starting point on the circumference of the circle of the form (x,y)
+    @param p3 a ending point on the circumference of the circle of the form (x,y)
+    @param direction the direction of travel allowed on the circle
+    @returns the directional arc length between the two points
+    """
+    p1 = c1[:2]
+    r = c1[2]
+    v1 = p2 - p1
+    v2 = p3 - p1
+
+    theta = atan2(v2[1], v2[0]) - atan2(v1[1], v1[0])
+    if theta < 0 and direction == Direction.LEFT:
+        theta = theta + 2 * np.pi
+    elif theta > 0 and direction == Direction.RIGHT:
+        theta = theta - 2 * np.pi
+    return abs(theta * r)
 
 
 def GetOuterTangentPointsAndLines(c1: np.ndarray, c2: np.ndarray):
@@ -11,7 +39,11 @@ def GetOuterTangentPointsAndLines(c1: np.ndarray, c2: np.ndarray):
     
     https://en.wikipedia.org/wiki/Tangent_lines_to_circles
     
-    @returns the 4 potential tangent points
+    @param c1 the array describing c1 (x,y,r)
+    @param c2 the array describing c2 (x,y,r)
+    @returns the 4 potential tangent points in order of 
+    [c1 up-right, c1 down-left, c2 up-right, c2 down-left]
+    and returns the tangent lines [line above, line below]
     """
 
     # Calculate Outer tangents
@@ -45,6 +77,11 @@ def GetOuterTangentPointsAndLines(c1: np.ndarray, c2: np.ndarray):
 def GetInnerTangentPointsAndLines(c1, c2):
     """
     c1 and c2 are both circles of form (x, y, r)
+    https://math.stackexchange.com/questions/719758/inner-tangent-between-two-circles-formula
+    @param c1 circle of the form (x,y,r)
+    @param c2 circle of the form (x,y,r)
+    @returns None, None if the circles overlap
+    otherwise returns a tuple of the form (4 tangent points, 2 inner tangent lines)
     """
     x1, y1, r1 = c1
     x2, y2, r2 = c2
@@ -53,28 +90,48 @@ def GetInnerTangentPointsAndLines(c1, c2):
     opposite = r1 + r2
     if opposite > hypotenuse:
         print("Cannot compute arcsin of this scenario")
-        return None,None
+        return None, None
     # Get the angle betwen the x-axis to the line from the circle center to its
     # tangent point and shift by the rotational offset between the centers of the
     # 2 circles
-    phi = atan2(y2 - y1, x2 - x1 + eps) + asin(opposite / hypotenuse)  - np.pi / 2
+    phi = atan2(y2 - y1, x2 - x1 + eps) + asin(
+        opposite / hypotenuse) - np.pi / 2
 
-    p1x = x1 + r1*cos(phi)
-    p1y = y1 + r1*sin(phi)
-    p2x = x2 + r2*cos(phi + np.pi)
-    p2y = y2 + r2*sin(phi + np.pi)
-    p1 = [p1x, p1y]
-    p2 = [p2x, p2y]
-    
+    p1x = x1 + r1 * cos(phi)
+    p1y = y1 + r1 * sin(phi)
+    p2x = x2 + r2 * cos(phi + np.pi)
+    p2y = y2 + r2 * sin(phi + np.pi)
+    p1 = np.array([p1x, p1y])
+    p2 = np.array([p2x, p2y])
+
     # Flip phi to point to the other set of tangent points
     phi2 = atan2(y2 - y1, x2 - x1) - asin(opposite / hypotenuse) + np.pi / 2
-    p3x = x1 + r1*cos(phi2)
-    p3y = y1 + r1*sin(phi2)
-    p4x = x2 + r2*cos(phi2 + np.pi)
-    p4y = y2 + r2*sin(phi2 + np.pi)
-    p3 = [p3x, p3y]
-    p4 = [p4x, p4y]
+    p3x = x1 + r1 * cos(phi2)
+    p3y = y1 + r1 * sin(phi2)
+    p4x = x2 + r2 * cos(phi2 + np.pi)
+    p4y = y2 + r2 * sin(phi2 + np.pi)
+    p3 = np.array([p3x, p3y])
+    p4 = np.array([p4x, p4y])
 
-    points = [p1,p2,p3,p4]
-    innerTangentLines = [[p1,p2], [p3,p4]]
+    points = np.array([p1, p2, p3, p4])
+    innerTangentLines = np.array([np.array([p1, p2]), np.array([p3, p4])])
     return points, innerTangentLines
+
+
+def GetAdjacentCircles(p, r):
+    """
+    Given a pose p (x, y, theta) and a turning radius r, calculate the dubins
+    circles around the pose
+
+    @param p the pose of the car to calculate the turning circles for (x,y,theta)
+    @param r, the turning radius of the car
+    @returns the the two turning circles of (cx, cy, r) [right circle, left circle] 
+    orientation is relative to the pose of the car
+    """
+    x,y,theta = p
+    cx_right = x + r * cos(theta - np.pi / 2)
+    cy_right = y + r * sin(theta - np.pi / 2)
+    cx_left = x - r * cos(theta - np.pi / 2)
+    cy_left = y - r * sin(theta - np.pi / 2)
+
+    return [np.array([cx_right, cy_right, r]), np.array([cx_left, cy_left, r])]

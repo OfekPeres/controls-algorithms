@@ -4,10 +4,12 @@ from src.dynamics import dubins_car
 from src.dynamics.dubins_car import DubinsCar
 from src.controls.bang_bang import BangBang
 from src.controls.numerical_optimal_controls import GetOptimalPath, GetOptimalControlTry2
-from src.controls.dubins_path_utils import GetOuterTangentPointsAndLines, GetInnerTangentPointsAndLines
+from src.controls.dubins_path_utils import GetOuterTangentPointsAndLines, GetInnerTangentPointsAndLines, GetAdjacentCircles
 import src.controls.reeds_shepp as rs
+from src.controls.dubins_path import DubinsPath
 import matplotlib.pyplot as plt
 import random
+from pprint import pprint
 
 def testBangBang():
     payloadFromFrontEnd = [{'x':40, 'y':40}]
@@ -119,11 +121,71 @@ def testVaryingCirclesForTangents():
         c2 = np.array([random.random()*100, random.random()*100, r])
         testGetCircleTangents(c1,c2)
     
+def testGetRSR():
+    car = DubinsCar(10,0,0,0,0,2)
+    print(car.turningRadius)
+    pathCalculator = DubinsPath(car)
+    startPose = np.array([0,0,np.pi/2])
+    goalPose = np.array([100,0,-np.pi/2])
+    path = pathCalculator.GetRSR(startPose, goalPose)
+    dist = 0
+    for p in path:
+        dist += p["distance"]
+    pprint(path)
+    print(f"calculated {dist=}")
+    deltaX = goalPose[0] - startPose[0] - 2*car.turningRadius
+    expectedDist = np.pi*car.turningRadius + deltaX
+    print(f"expected {expectedDist=}")
 
+def testGetCSCPath():
+    car = DubinsCar(10,0,0,0,0,1)
+    pathGenerator = DubinsPath(car)
+    startPose = np.array([0,0,np.pi/2])
+    goalPose = np.array([100,0,np.pi/2])
+    output = pathGenerator.GetCSCPath(startPose, goalPose)
+    c_start_right, c_start_left = GetAdjacentCircles(startPose,
+                                                     car.turningRadius)
+    c_goal_right, c_goal_left = GetAdjacentCircles(goalPose, car.turningRadius)
+    circle1 = plt.Circle(c_start_left[:2],
+                         c_start_left[2],
+                         color="blue",
+                         alpha=0.5)
+    circle2 = plt.Circle(c_start_right[:2],
+                         c_start_right[2],
+                         color="red",
+                         alpha=0.5)
+    circle3 = plt.Circle(c_goal_left[:2],
+                         c_goal_left[2],
+                         color="blue",
+                         alpha=0.5)
+    circle4 = plt.Circle(c_goal_right[:2],
+                         c_goal_right[2],
+                         color="red",
+                         alpha=0.5)
+    fig, ax = plt.subplots()
+    ax.add_patch(circle1)
+    ax.add_patch(circle2)
+    ax.add_patch(circle3)
+    ax.add_patch(circle4)
+    plt.text(c_start_right[0] - car.turningRadius/2 ,c_start_right[1], s="start r")
+    plt.text(c_start_left[0]  - car.turningRadius/2 ,c_start_left[1], s="start l")
+    plt.text(c_goal_right[0]  - car.turningRadius/2 ,c_goal_right[1], s="goal r")
+    plt.text(c_goal_left[0]   - car.turningRadius/2 ,c_goal_left[1], s="goal l")
+    ax.set_aspect("equal", adjustable="datalim")
+    for i, p in enumerate(output["waypoints"]):
+        plt.scatter(p[0], p[1])
+        plt.text(p[0], p[1], s=i)
+
+    
+    # ax.set_xlim([-50, 100])
+    # ax.set_ylim([-50, 100])
+    plt.show()
 
 if __name__ == "__main__":
     # testBangBang()
     # testStep()
     # testThetaError()
     # testReedShepp()
-    testVaryingCirclesForTangents()
+    # testVaryingCirclesForTangents()
+    # testGetRSR()
+    testGetCSCPath()

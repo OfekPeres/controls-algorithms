@@ -2,3 +2,4 @@ scratch.py
 __pycache__
 *.xlsx
 .vscode/
+.pytest_cache
