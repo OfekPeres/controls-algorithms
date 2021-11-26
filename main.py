@@ -137,12 +137,54 @@ def testGetRSR():
     expectedDist = np.pi*car.turningRadius + deltaX
     print(f"expected {expectedDist=}")
 
-def testGetCSCPath():
+
+def testAllGetCSCPath():
+    startPoseLSL = np.array([100,100,np.pi])
+    goalPoseLSL = np.array([0,0,0])
+
+    startPoseRSR = np.array([0,0,np.pi/2])
+    goalPoseRSR = np.array([100,0,-np.pi/2])
+
+    startPoseRSL = np.array([0,0,np.pi/2])
+    goalPoseRSL = np.array([100,0,np.pi/2])
+
+    startPoseLSR = np.array([100,100,np.pi])
+    goalPoseLSR = np.array([0,0,np.pi])
+
+    poses = [[startPoseLSL,goalPoseLSL], [startPoseRSR, goalPoseRSR],[startPoseRSL, goalPoseRSL], [startPoseLSR, goalPoseLSR]]
+
+    for (startPose, goalPose) in poses:
+        testGetDubinsPath(startPose, goalPose)
+
+
+def testBonusCasesCSCPath():
+    startPose1 = np.array([656.8522884541248,382.0741144304022,-9.45189052775325])
+    goalPose1 = np.array([292.38330078125,608.1166687011719,0])
+
+    # RSR that does not work correctly
+    startPose2 = np.array([100,10,np.pi])
+    goalPose2 = np.array([10,100,0])
+
+    # LSL that does not work correctly
+    startPose3 = np.array([10,100,np.pi])
+    goalPose3 = np.array([10,10,0])
+    # LSL that does not work correctly
+    startPose4 = np.array([10,100,np.pi])
+    goalPose4 = np.array([20,10,0])
+
+    poses = [[startPose1, goalPose1], [startPose2, goalPose2], [startPose3, goalPose3], [startPose4, goalPose4]]
+
+    for (startPose, goalPose) in poses:
+        testGetDubinsPath(startPose, goalPose)
+
+def testGetDubinsPath(startPose, goalPose):
     car = DubinsCar(10,0,0,0,0,1)
     pathGenerator = DubinsPath(car)
-    startPose = np.array([0,100,np.pi])
-    goalPose = np.array([0,0,0])
-    output = pathGenerator.GetCSCPath(startPose, goalPose)
+    # startPose = np.array([100,100,np.pi])
+    # startPose = np.array([597.96149088,  14.99434872,  -9.35084254])
+    # goalPose = np.array([50,50,0])
+    # goalPose = np.array([ 79.38330078, 717.5166626, 0])
+    output = pathGenerator.GetDubinsPath(startPose, goalPose)
     pprint(output)
     c_start_right, c_start_left = GetAdjacentCircles(startPose,
                                                      car.turningRadius)
@@ -177,7 +219,7 @@ def testGetCSCPath():
         plt.scatter(p[0], p[1])
         plt.text(p[0], p[1], s=i)
 
-    
+    plt.title(output['type'])
     # ax.set_xlim([-50, 100])
     # ax.set_ylim([-50, 100])
     plt.show()
@@ -188,5 +230,6 @@ if __name__ == "__main__":
     # testThetaError()
     # testReedShepp()
     # testVaryingCirclesForTangents()
-    # testGetRSR()
-    testGetCSCPath()
+    # testAllGetCSCPath()
+    testAllGetCSCPath()
+    testBonusCasesCSCPath()
