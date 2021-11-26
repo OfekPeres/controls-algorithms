@@ -3,19 +3,18 @@ from .dubins_path_utils import CalcDirectionalArcLength, Direction, GetAdjacentC
 import numpy as np
 import matplotlib.pyplot as plt
 from ..dynamics.dubins_car import DubinsCar
-
 """
 Notes: Due to the fact that in Dubins Path, all circles are the same radius
 and circles are stored as (x,y,r), np.linalg.norm(c1-c2) will be the same as
 np.linalg.norm(c1[:2] - c2[:2]) 
 
 """
+
+
 class DubinsPath:
     def __init__(self, pCar: DubinsCar) -> None:
         self.car = pCar
 
-
-    
     def GetDubinsPath(self, startPose: np.ndarray, goalPose: np.ndarray):
         """
         Given a starting orientation and an ending orientation, picks the 
@@ -26,11 +25,10 @@ class DubinsPath:
         waypoints:[4 points to travel to]}.
         """
         dist = np.linalg.norm(startPose[:2] - goalPose[:2])
-        if dist >= self.car.turningRadius*4:
-            return  self.GetCSCPath(startPose, goalPose)
+        if dist >= self.car.turningRadius * 4:
+            return self.GetCSCPath(startPose, goalPose)
         else:
             return self.GetCCCPath(startPose, goalPose)
-
 
     def GetCSCPath(self, startPose: np.ndarray, goalPose: np.ndarray):
         """
@@ -42,24 +40,32 @@ class DubinsPath:
         LSL -> c_start_left closest to c_goal_left
         RSL -> c_start_right closest to c_goal_left
         LSR -> c_start_left closest to c_goal_right
+
+        @param start: start pose (x,y,theta)
+        @param goal: goal pose (x,y,theta)
+        @returns a dictionary with the form {path: [path elements], 
+        waypoints:[4 points to travel to]}.
         """
-        c_start_right, c_start_left = GetAdjacentCircles(startPose, self.car.turningRadius)
-        c_goal_right, c_goal_left = GetAdjacentCircles(goalPose, self.car.turningRadius)
+        c_start_right, c_start_left = GetAdjacentCircles(
+            startPose, self.car.turningRadius)
+        c_goal_right, c_goal_left = GetAdjacentCircles(goalPose,
+                                                       self.car.turningRadius)
 
         RSR_dist = np.linalg.norm(c_start_right - c_goal_right)
         LSL_dist = np.linalg.norm(c_start_left - c_goal_left)
         RSL_dist = np.linalg.norm(c_start_right - c_goal_left)
         LSR_dist = np.linalg.norm(c_start_left - c_goal_right)
 
-        distances         = np.array([RSR_dist, LSL_dist, RSL_dist, LSR_dist])
-        pathFunctions     = np.array([self.GetRSR, self.GetLSL, self.GetRSL, self.GetLSR])
+        distances = np.array([RSR_dist, LSL_dist, RSL_dist, LSR_dist])
+        pathFunctions = np.array(
+            [self.GetRSR, self.GetLSL, self.GetRSL, self.GetLSR])
         shortestPathIndex = np.argmin(distances)
         return pathFunctions[shortestPathIndex](startPose, goalPose)
-    
-    
+
     def GetCCCPath(self, startPose: np.ndarray, goalPose: np.ndarray):
         print("Not implemented yet")
         return None
+
     def GetRSR(self, startPose: np.ndarray, goalPose: np.ndarray):
         """
         Get the Right -> Straight -> Right path
@@ -123,7 +129,8 @@ class DubinsPath:
             waypoints,
             "totalDistance":
             firstRightTurnDistance + straightLineDistance +
-            secondRightTurnDistance
+            secondRightTurnDistance,
+            "type":"RSR"
         }
 
     def GetLSL(self, startPose: np.ndarray, goalPose: np.ndarray):
@@ -183,7 +190,8 @@ class DubinsPath:
             "waypoints": [startPose[:2], c_start_t, c_goal_t, goalPose[:2]],
             "totalDistance":
             firstLeftTurnDistance + straightSegmentDistance +
-            secondLeftTurnDistance
+            secondLeftTurnDistance,
+            "type":"LSL"
         }
 
     def GetLSR(self, startPose: np.ndarray, goalPose: np.ndarray):
@@ -240,7 +248,8 @@ class DubinsPath:
             "waypoints": [startPose[:2], c_start_t, c_goal_t, goalPose[:2]],
             "totalDistance":
             firstLeftTurnDistance + straightSegmentDistance +
-            secondRightTurnDistance
+            secondRightTurnDistance,
+            "type":"LSR"
         }
 
     def GetRSL(self, startPose: np.ndarray, goalPose: np.ndarray):
@@ -285,7 +294,7 @@ class DubinsPath:
 
         secondLeftTurnDistance = CalcDirectionalArcLength(
             c_goal_left, c_goal_t, goalPose[:2], Direction.LEFT)
-        
+
         numStepsSecondLeftTurn = secondLeftTurnDistance / self.car.speed
         secondTurn = {
             "direction": Direction.LEFT.name,
@@ -298,5 +307,6 @@ class DubinsPath:
             "waypoints": [startPose[:2], c_start_t, c_goal_t, goalPose[:2]],
             "totalDistance":
             firstRightTurnDistance + straightSegmentDistance +
-            secondLeftTurnDistance
+            secondLeftTurnDistance,
+            "type":"RSL"
         }

@@ -33,7 +33,7 @@ class BangBang:
         print("Max control inputs: {}".format(maxControlInputs))
         # THINK ABOUT THIS CUTOFF CASE
         phis = []
-        while distToGoal > self.car.l/2:
+        while distToGoal > 1e-3:
             phi = self.GetPhi(target)
             phis.append(phi)
             self.car.step(phi)
