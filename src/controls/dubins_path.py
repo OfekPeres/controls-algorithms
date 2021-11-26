@@ -93,9 +93,9 @@ class DubinsPath:
             c_start, c_goal)
 
         # Pick the WRONG tangent lines to support p5js unfortunate use of a 
-        #  left handed system
-        c_start_t = tangentLines[1][0]
-        c_goal_t = tangentLines[1][1]
+        #  left handed system (should be index 0, not 1)
+        c_start_t = tangentLines[0][0]
+        c_goal_t = tangentLines[0][1]
 
         # Turn Right from the original pose to the first tangent point
         firstRightTurnDistance = CalcDirectionalArcLength(
@@ -155,9 +155,9 @@ class DubinsPath:
 
         # Pick the closest pair of tangent points on the same tangent line
          # Pick the WRONG tangent lines to support p5js unfortunate use of a 
-        #  left handed system
-        c_start_t = tangentLines[0][0]
-        c_goal_t = tangentLines[0][1]
+        #  left handed system (should be index 1, not 0)
+        c_start_t = tangentLines[1][0]
+        c_goal_t = tangentLines[1][1]
 
         # Turn LEFT from the original pose to the first tangent point
         firstLeftTurnDistance = CalcDirectionalArcLength(
