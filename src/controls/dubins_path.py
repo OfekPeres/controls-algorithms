@@ -1,4 +1,5 @@
 from math import cos, sin
+from pprint import pprint
 from .dubins_path_utils import CalcDirectionalArcLength, Direction, GetAdjacentCircles, GetInnerTangentPointsAndLines, GetOuterTangentPointsAndLines
 import numpy as np
 import matplotlib.pyplot as plt
@@ -52,9 +53,9 @@ class DubinsPath:
                                                        self.car.turningRadius)
 
         RSR_dist = np.linalg.norm(c_start_right - c_goal_right)
-        LSL_dist = np.linalg.norm(c_start_left  - c_goal_left)
+        LSL_dist = np.linalg.norm(c_start_left - c_goal_left)
         RSL_dist = np.linalg.norm(c_start_right - c_goal_left)
-        LSR_dist = np.linalg.norm(c_start_left  - c_goal_right)
+        LSR_dist = np.linalg.norm(c_start_left - c_goal_right)
 
         distances = np.array([RSR_dist, LSL_dist, RSL_dist, LSR_dist])
         print(distances)
@@ -77,29 +78,34 @@ class DubinsPath:
         waypoints:[4 points to travel to]}.
         """
         r = self.car.turningRadius
-        # Calculate the center of the circle adjacent and to the 'right' of
-        # the start point (in the reference frame of the car)
-        x_start, y_start, theta_start = startPose
-        x_goal, y_goal, theta_goal = goalPose
-        cx_start = x_start + r * cos(theta_start - np.pi / 2)
-        cy_start = y_start + r * sin(theta_start - np.pi / 2)
-        c_start = np.array([cx_start, cy_start, r])
+        # Pick the "Left" adjacent Circles as on the LSL path they will be the
+        # circles the car drives on
+        c_start_right, _ = GetAdjacentCircles(startPose, r)
+        c_goal_right, _ = GetAdjacentCircles(goalPose, r)
 
-        cx_goal = x_goal + r * cos(theta_goal - np.pi / 2)
-        cy_goal = y_goal + r * sin(theta_goal - np.pi / 2)
-        c_goal = np.array([cx_goal, cy_goal, r])
-
+        # Calculate the tangent points
         tangentPoints, tangentLines = GetOuterTangentPointsAndLines(
-            c_start, c_goal)
+            c_start_right, c_goal_right)
 
-        # Pick the WRONG tangent lines to support p5js unfortunate use of a 
-        #  left handed system (should be index 0, not 1)
-        c_start_t = tangentLines[0][0]
-        c_goal_t = tangentLines[0][1]
+        # Pick the closest pair of tangent points on the same tangent line
+        # Where "closest" means the tangent point first hit by a car driving
+        # on that directional circle
+        c_start_option_1 = tangentLines[0][0]
+        c_start_option_2 = tangentLines[1][0]
+        dist1 = CalcDirectionalArcLength(c_start_right, startPose[:2],
+                                         c_start_option_1, Direction.RIGHT)
+        dist2 = CalcDirectionalArcLength(c_start_right, startPose[:2],
+                                         c_start_option_2, Direction.RIGHT)
+        if dist1 < dist2:
+            c_start_t = tangentLines[0][0]
+            c_goal_t = tangentLines[0][1]
+        else:
+            c_start_t = tangentLines[1][0]
+            c_goal_t = tangentLines[1][1]
 
         # Turn Right from the original pose to the first tangent point
         firstRightTurnDistance = CalcDirectionalArcLength(
-            c_start, startPose[:2], c_start_t, Direction.RIGHT)
+            c_start_right, startPose[:2], c_start_t, Direction.RIGHT)
         numTimeStepsForFirstRightTurn = firstRightTurnDistance / self.car.speed
         firstTurn = {
             "direction": Direction.RIGHT.name,
@@ -109,7 +115,7 @@ class DubinsPath:
 
         # Turn right from the second tangent point to the final pose
         secondRightTurnDistance = CalcDirectionalArcLength(
-            c_goal, c_goal_t, goalPose[:2], Direction.RIGHT)
+            c_goal_right, c_goal_t, goalPose[:2], Direction.RIGHT)
         numTimeStepsForSecondrightTurn = secondRightTurnDistance / self.car.speed
         secondTurn = {
             "direction": Direction.RIGHT.name,
@@ -118,7 +124,7 @@ class DubinsPath:
         }
 
         # Go straight between the two circles
-        straightLineDistance = np.linalg.norm(c_goal - c_start)
+        straightLineDistance = np.linalg.norm(c_goal_right - c_start_right)
         numTimeStepsForStraightLine = straightLineDistance / self.car.speed
         straightSegment = {
             "direction": Direction.STRAIGHT.name,
@@ -152,12 +158,21 @@ class DubinsPath:
         # Calculate the tangent points
         tangentPoints, tangentLines = GetOuterTangentPointsAndLines(
             c_start_left, c_goal_left)
-
         # Pick the closest pair of tangent points on the same tangent line
-         # Pick the WRONG tangent lines to support p5js unfortunate use of a 
-        #  left handed system (should be index 1, not 0)
-        c_start_t = tangentLines[0][0]
-        c_goal_t = tangentLines[0][1]
+        # Where "closest" means the tangent point first hit by a car driving
+        # on that directional circle
+        c_start_option_1 = tangentLines[0][0]
+        c_start_option_2 = tangentLines[1][0]
+        dist1 = CalcDirectionalArcLength(c_start_left, startPose[:2],
+                                         c_start_option_1, Direction.LEFT)
+        dist2 = CalcDirectionalArcLength(c_start_left, startPose[:2],
+                                         c_start_option_2, Direction.LEFT)
+        if dist1 < dist2:
+            c_start_t = tangentLines[0][0]
+            c_goal_t = tangentLines[0][1]
+        else:
+            c_start_t = tangentLines[1][0]
+            c_goal_t = tangentLines[1][1]
 
         # Turn LEFT from the original pose to the first tangent point
         firstLeftTurnDistance = CalcDirectionalArcLength(
