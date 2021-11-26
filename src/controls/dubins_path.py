@@ -77,30 +77,10 @@ class DubinsPath:
         waypoints:[4 points to travel to]}.
         """
         r = self.car.turningRadius
-        # Pick the "Left" adjacent Circles as on the LSL path they will be the
+        # Pick the "Right" adjacent Circles as on the RSR path they will be the
         # circles the car drives on
         c_start_right, _ = GetAdjacentCircles(startPose, r)
         c_goal_right, _ = GetAdjacentCircles(goalPose, r)
-
-        # Calculate the tangent points
-        tangentPoints, tangentLines = GetOuterTangentPointsAndLines(
-            c_start_right, c_goal_right)
-
-        # Pick the closest pair of tangent points on the same tangent line
-        # Where "closest" means the tangent point first hit by a car driving
-        # on that directional circle
-        c_start_option_1 = tangentLines[0][0]
-        c_start_option_2 = tangentLines[1][0]
-        dist1 = CalcDirectionalArcLength(c_start_right, startPose[:2],
-                                         c_start_option_1, Direction.RIGHT)
-        dist2 = CalcDirectionalArcLength(c_start_right, startPose[:2],
-                                         c_start_option_2, Direction.RIGHT)
-        if dist1 < dist2:
-            c_start_t = tangentLines[0][0]
-            c_goal_t = tangentLines[0][1]
-        else:
-            c_start_t = tangentLines[1][0]
-            c_goal_t = tangentLines[1][1]
 
         c_start_t, c_goal_t = PickTangentLine(startPose, goalPose, r,
                                               Direction.RIGHT, Direction.RIGHT)
@@ -156,25 +136,6 @@ class DubinsPath:
         # circles the car drives on
         _, c_start_left = GetAdjacentCircles(startPose, r)
         _, c_goal_left = GetAdjacentCircles(goalPose, r)
-
-        # Calculate the tangent points
-        tangentPoints, tangentLines = GetOuterTangentPointsAndLines(
-            c_start_left, c_goal_left)
-        # Pick the closest pair of tangent points on the same tangent line
-        # Where "closest" means the tangent point first hit by a car driving
-        # on that directional circle
-        c_start_option_1 = tangentLines[0][0]
-        c_start_option_2 = tangentLines[1][0]
-        dist1 = CalcDirectionalArcLength(c_start_left, startPose[:2],
-                                         c_start_option_1, Direction.LEFT)
-        dist2 = CalcDirectionalArcLength(c_start_left, startPose[:2],
-                                         c_start_option_2, Direction.LEFT)
-        if dist1 < dist2:
-            c_start_t = tangentLines[0][0]
-            c_goal_t = tangentLines[0][1]
-        else:
-            c_start_t = tangentLines[1][0]
-            c_goal_t = tangentLines[1][1]
 
         c_start_t, c_goal_t = PickTangentLine(startPose, goalPose, r,
                                               Direction.LEFT, Direction.LEFT)
