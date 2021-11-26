@@ -140,9 +140,10 @@ def testGetRSR():
 def testGetCSCPath():
     car = DubinsCar(10,0,0,0,0,1)
     pathGenerator = DubinsPath(car)
-    startPose = np.array([0,0,np.pi/2])
-    goalPose = np.array([100,0,np.pi/2])
+    startPose = np.array([0,100,np.pi])
+    goalPose = np.array([0,0,0])
     output = pathGenerator.GetCSCPath(startPose, goalPose)
+    pprint(output)
     c_start_right, c_start_left = GetAdjacentCircles(startPose,
                                                      car.turningRadius)
     c_goal_right, c_goal_left = GetAdjacentCircles(goalPose, car.turningRadius)
