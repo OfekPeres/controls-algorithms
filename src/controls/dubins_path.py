@@ -279,7 +279,7 @@ class DubinsPath:
             c_start_right, startPose[:2], c_start_t, Direction.RIGHT)
         numStepsFirstLeftTurn = firstRightTurnDistance / self.car.speed
         firstTurn = {
-            "direction": Direction.LEFT.name,
+            "direction": Direction.RIGHT.name,
             "distance": firstRightTurnDistance,
             "numSteps": numStepsFirstLeftTurn
         }
