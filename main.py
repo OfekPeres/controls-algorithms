@@ -116,11 +116,13 @@ def testVaryingCirclesForTangents():
     r = 10
     x1,y1 = 0,0
     x2,y2 = 10,10
-    for i in range(10):
-        c1 = np.array([random.random()*100, random.random()*100, r])
-        c2 = np.array([random.random()*100, random.random()*100, r])
-        testGetCircleTangents(c1,c2)
-    
+    # for i in range(10):
+    #     c1 = np.array([random.random()*100, random.random()*100, r])
+    #     c2 = np.array([random.random()*100, random.random()*100, r])
+    #     testGetCircleTangents(c1,c2)
+    c1 = np.array([50,100,r])
+    c2 = np.array([30,10,r])
+    testGetCircleTangents(c1,c2)
 def testGetRSR():
     car = DubinsCar(10,0,0,0,0,2)
     print(car.turningRadius)
@@ -229,7 +231,7 @@ if __name__ == "__main__":
     # testStep()
     # testThetaError()
     # testReedShepp()
-    # testVaryingCirclesForTangents()
+    testVaryingCirclesForTangents()
     # testAllGetCSCPath()
     testAllGetCSCPath()
     testBonusCasesCSCPath()

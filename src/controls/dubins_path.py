@@ -1,6 +1,6 @@
 from math import cos, sin
 from pprint import pprint
-from .dubins_path_utils import CalcDirectionalArcLength, Direction, GetAdjacentCircles, GetInnerTangentPointsAndLines, GetOuterTangentPointsAndLines
+from .dubins_path_utils import CalcDirectionalArcLength, Direction, GetAdjacentCircles, GetInnerTangentPointsAndLines, GetOuterTangentPointsAndLines, PickTangentLine
 import numpy as np
 import matplotlib.pyplot as plt
 from ..dynamics.dubins_car import DubinsCar
@@ -58,7 +58,6 @@ class DubinsPath:
         LSR_dist = np.linalg.norm(c_start_left - c_goal_right)
 
         distances = np.array([RSR_dist, LSL_dist, RSL_dist, LSR_dist])
-        print(distances)
         pathFunctions = np.array(
             [self.GetRSR, self.GetLSL, self.GetRSL, self.GetLSR])
         shortestPathIndex = np.argmin(distances)
@@ -102,6 +101,9 @@ class DubinsPath:
         else:
             c_start_t = tangentLines[1][0]
             c_goal_t = tangentLines[1][1]
+
+        c_start_t, c_goal_t = PickTangentLine(startPose, goalPose, r,
+                                              Direction.RIGHT, Direction.RIGHT)
 
         # Turn Right from the original pose to the first tangent point
         firstRightTurnDistance = CalcDirectionalArcLength(
@@ -174,6 +176,8 @@ class DubinsPath:
             c_start_t = tangentLines[1][0]
             c_goal_t = tangentLines[1][1]
 
+        c_start_t, c_goal_t = PickTangentLine(startPose, goalPose, r,
+                                              Direction.LEFT, Direction.LEFT)
         # Turn LEFT from the original pose to the first tangent point
         firstLeftTurnDistance = CalcDirectionalArcLength(
             c_start_left, startPose[:2], c_start_t, Direction.LEFT)

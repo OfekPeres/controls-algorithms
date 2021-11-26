@@ -1,4 +1,4 @@
-from src.controls.dubins_path_utils import CalcDirectionalArcLength, Direction, GetAdjacentCircles
+from src.controls.dubins_path_utils import CalcDirectionalArcLength, Direction, GetAdjacentCircles, PickTangentLine, calculateAngleBetween
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -42,3 +42,19 @@ def test_getAdjacentCircles():
     # ax.set_xlim([-5,10])
     # ax.set_ylim([-5,10])
     # plt.show()
+def test_calculateAngleBetween1():
+    v1 = np.array([1,0])
+    v2 = np.array([0,1])
+    angle = calculateAngleBetween(v1, v2)
+    print(np.rad2deg(angle))
+    assert np.pi/2 == angle
+
+def test_PickTangentLine():
+    startPose = np.array([0,0,0])
+    goalPose = np.array([0,50,np.pi])
+    radius = 10
+    angle_1, angle_2 = PickTangentLine(startPose, goalPose, radius, Direction.LEFT, Direction.LEFT)
+    print(np.rad2deg(angle_1))
+    print(np.rad2deg(angle_2))
+    assert False
+

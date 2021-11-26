@@ -30,7 +30,6 @@ class BangBang:
         timeStepsToTurnCircle = (4*np.pi)/(maxThetaDot) 
         timeStepsToGoStraightToTarget = distToGoal/self.car.speed
         maxControlInputs = timeStepsToTurnCircle + timeStepsToGoStraightToTarget
-        print("Max control inputs: {}".format(maxControlInputs))
         # THINK ABOUT THIS CUTOFF CASE
         phis = []
         while distToGoal > 1e-3:
