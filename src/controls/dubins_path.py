@@ -38,11 +38,14 @@ class DubinsPath:
                                            c_goal_right[:2])
 
         # Pick the path algorithm based on which turning circles are closest!
-        if left_circle_dist < 4 * r and left_circle_dist < right_circle_dist:
-            return self.GetLRL(startPose, goalPose)
-        # Check RLR
-        elif right_circle_dist < 4 * r and right_circle_dist < left_circle_dist:
-            return self.GetRLR(startPose, goalPose)
+        
+        if left_circle_dist < 4 * r or right_circle_dist < 4*r: 
+            if left_circle_dist < right_circle_dist:
+                return self.GetLRL(startPose, goalPose)
+            elif right_circle_dist < left_circle_dist:
+                return self.GetRLR(startPose, goalPose)
+            else:
+                print("PANIK! this should be impossible")
         else:
             return self.GetCSCPath(startPose, goalPose)
 
