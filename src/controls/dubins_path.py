@@ -140,30 +140,6 @@ class DubinsPath:
             "distance": thirdRightTurnDistance,
             "numSteps": numTimeStepsForThirdRightTurn
         }
-        # TODO: delete the plotting code
-        circle1 = plt.Circle(c1[:2], r, color="blue", alpha=0.2)
-        circle2 = plt.Circle(c2[:2], r, color="red", alpha=0.2)
-        circle3 = plt.Circle(p3, r, color="black", alpha=0.2)
-
-        fig, ax = plt.subplots()
-        ax.add_patch(circle1)
-        ax.add_patch(circle2)
-        ax.add_patch(circle3)
-        ax.arrow(startPose[0],
-                 startPose[1],
-                 10 * cos(startPose[2]),
-                 10 * sin(startPose[2]),
-                 head_width=2)
-        ax.arrow(goalPose[0],
-                 goalPose[1],
-                 10 * cos(goalPose[2]),
-                 10 * sin(goalPose[2]),
-                 head_width=2)
-        plt.scatter(midPt[0], midPt[1])
-        plt.scatter(c1c3_tangent[0], c1c3_tangent[1])
-        plt.scatter(c2c3_tangent[0], c2c3_tangent[1])
-        ax.set_aspect("equal", adjustable='datalim')
-        plt.show()
 
         waypoints = [startPose[:2], c1c3_tangent, c2c3_tangent, goalPose[:2]]
         return {
@@ -231,29 +207,29 @@ class DubinsPath:
 
         waypoints = [startPose[:2], c1c3_tangent, c2c3_tangent, goalPose[:2]]
         # TODO: Delete this visualization code
-        circle1 = plt.Circle(c1[:2], r, color="blue", alpha=0.2)
-        circle2 = plt.Circle(c2[:2], r, color="red", alpha=0.2)
-        circle3 = plt.Circle(p3, r, color="black", alpha=0.2)
+        # circle1 = plt.Circle(c1[:2], r, color="blue", alpha=0.2)
+        # circle2 = plt.Circle(c2[:2], r, color="red", alpha=0.2)
+        # circle3 = plt.Circle(p3, r, color="black", alpha=0.2)
 
-        fig, ax = plt.subplots()
-        ax.add_patch(circle1)
-        ax.add_patch(circle2)
-        ax.add_patch(circle3)
-        ax.arrow(startPose[0],
-                 startPose[1],
-                 10 * cos(startPose[2]),
-                 10 * sin(startPose[2]),
-                 head_width=2)
-        ax.arrow(goalPose[0],
-                 goalPose[1],
-                 10 * cos(goalPose[2]),
-                 10 * sin(goalPose[2]),
-                 head_width=2)
-        plt.scatter(midPt[0], midPt[1])
-        plt.scatter(c1c3_tangent[0], c1c3_tangent[1])
-        plt.scatter(c2c3_tangent[0], c2c3_tangent[1])
-        ax.set_aspect("equal", adjustable='datalim')
-        plt.show()
+        # fig, ax = plt.subplots()
+        # ax.add_patch(circle1)
+        # ax.add_patch(circle2)
+        # ax.add_patch(circle3)
+        # ax.arrow(startPose[0],
+        #          startPose[1],
+        #          10 * cos(startPose[2]),
+        #          10 * sin(startPose[2]),
+        #          head_width=2)
+        # ax.arrow(goalPose[0],
+        #          goalPose[1],
+        #          10 * cos(goalPose[2]),
+        #          10 * sin(goalPose[2]),
+        #          head_width=2)
+        # plt.scatter(midPt[0], midPt[1])
+        # plt.scatter(c1c3_tangent[0], c1c3_tangent[1])
+        # plt.scatter(c2c3_tangent[0], c2c3_tangent[1])
+        # ax.set_aspect("equal", adjustable='datalim')
+        # plt.show()
 
         return {
             "path": [firstTurn, secondTurn, thirdTurn],
