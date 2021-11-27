@@ -98,7 +98,7 @@ class DubinsPath:
         c1Toc2 = c1Toc2 / D
         midPt = c1[:2] + c1Toc2 * D / 2
         # Use the definition of perpendicular to get direction to center of c3
-        vec2p3 = -np.array([c2[1] - c1[1], -(c2[0] - c1[0])]) / D
+        vec2p3 = np.array([c2[1] - c1[1], -(c2[0] - c1[0])]) / D
         # From geometry
         distMidPtToP3 = sqrt(4 * r**2 - D**2 / 4)
         # The center of the tangent circle
@@ -165,7 +165,7 @@ class DubinsPath:
         midPt = c1[:2] + c1Toc2 * D / 2
         # Use definition of perpendicular for vectors (can make this negative to
         # get other tangent circle)
-        vec2p3 = np.array([c2[1] - c1[1], -(c2[0] - c1[0])]) / D
+        vec2p3 = -np.array([c2[1] - c1[1], -(c2[0] - c1[0])]) / D
         distMidPtToP3 = sqrt(4 * r**2 - D**2 / 4)
         # The center of the tangent circle
         p3 = midPt + vec2p3 * distMidPtToP3
