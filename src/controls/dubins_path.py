@@ -1,4 +1,4 @@
-from math import cos, sin
+from math import atan2, cos, sin, acos, sqrt
 from pprint import pprint
 from .dubins_path_utils import CalcDirectionalArcLength, Direction, GetAdjacentCircles, GetInnerTangentPointsAndLines, GetOuterTangentPointsAndLines, PickTangentLine
 import numpy as np
@@ -25,11 +25,26 @@ class DubinsPath:
         @returns a dictionary with the form {path: [path elements], 
         waypoints:[4 points to travel to]}.
         """
-        dist = np.linalg.norm(startPose[:2] - goalPose[:2])
-        if dist >= self.car.turningRadius * 4:
-            return self.GetCSCPath(startPose, goalPose)
+
+        # Check if LRL is feasible by checking if the two left circles are
+        # within 4*turning_radius of each other
+        # repeat for RLR, if not feasible do CSC paths
+        r = self.car.turningRadius
+        c_start_right, c_start_left = GetAdjacentCircles(startPose, r)
+        c_goal_right, c_goal_left = GetAdjacentCircles(goalPose, r)
+        # Check LRL
+        left_circle_dist = np.linalg.norm(c_start_left[:2] - c_goal_left[:2])
+        right_circle_dist = np.linalg.norm(c_start_right[:2] -
+                                           c_goal_right[:2])
+
+        # Pick the path algorithm based on which turning circles are closest!
+        if left_circle_dist < 4 * r and left_circle_dist < right_circle_dist:
+            return self.GetLRL(startPose, goalPose)
+        # Check RLR
+        elif right_circle_dist < 4 * r and right_circle_dist < left_circle_dist:
+            return self.GetRLR(startPose, goalPose)
         else:
-            return self.GetCCCPath(startPose, goalPose)
+            return self.GetCSCPath(startPose, goalPose)
 
     def GetCSCPath(self, startPose: np.ndarray, goalPose: np.ndarray):
         """
@@ -64,8 +79,189 @@ class DubinsPath:
         return pathFunctions[shortestPathIndex](startPose, goalPose)
 
     def GetCCCPath(self, startPose: np.ndarray, goalPose: np.ndarray):
-        print("Not implemented yet")
+
+        self.GetLRL(startPose, goalPose)
         return None
+
+    def GetRLR(self, startPose: np.ndarray, goalPose: np.ndarray):
+        r = self.car.turningRadius
+        c1, _ = GetAdjacentCircles(startPose, self.car.turningRadius)
+        c2, _ = GetAdjacentCircles(goalPose, self.car.turningRadius)
+        c1Toc2 = c2[:2] - c1[:2]
+        D = np.linalg.norm(c1Toc2)
+        # normalize c1Toc2
+        c1Toc2 = c1Toc2 / D
+        midPt = c1[:2] + c1Toc2 * D / 2
+        # Use the definition of perpendicular to get direction to center of c3
+        vec2p3 = -np.array([c2[1] - c1[1], -(c2[0] - c1[0])]) / D
+        # From geometry
+        distMidPtToP3 = sqrt(4 * r**2 - D**2 / 4)
+        # The center of the tangent circle
+        p3 = midPt + vec2p3 * distMidPtToP3
+        c3 = np.array([p3[0], p3[1], r])
+
+        # Find the tangent pt between c1 and c3
+        c1Toc3 = c3[:2] - c1[:2]
+        c1Toc3 = c1Toc3 / np.linalg.norm(c1Toc3)
+        c1c3_tangent = c1[:2] + c1Toc3 * r
+
+        # Find the tangent pt between c2 and c3
+        c2ToC3 = p3 - c2[:2]
+        c2ToC3 = c2ToC3 / np.linalg.norm(c2ToC3)
+        c2c3_tangent = c2[:2] + c2ToC3 * r
+
+        # Calculate the three turns
+
+        # First: Right Turn - from origin to first tangent pt
+        firstRightTurnDistance = CalcDirectionalArcLength(
+            c1, startPose[:2], c1c3_tangent, Direction.RIGHT)
+        numTimeStepsForFirstRightTurn = firstRightTurnDistance / self.car.speed
+        firstTurn = {
+            "direction": Direction.RIGHT.name,
+            "distance": firstRightTurnDistance,
+            "numSteps": numTimeStepsForFirstRightTurn
+        }
+        # Second: Left Turn - on c3 from c1c3 tangent to c2c3 tangent
+        secondLeftTurnDistance = CalcDirectionalArcLength(
+            c3, c1c3_tangent, c2c3_tangent, Direction.LEFT)
+        numTimeStepsForSecondLeftTurn = secondLeftTurnDistance / self.car.speed
+        secondTurn = {
+            "direction": Direction.LEFT.name,
+            "distance": secondLeftTurnDistance,
+            "numSteps": numTimeStepsForSecondLeftTurn
+        }
+
+        # Third: Right Turn - from c2c3 tangent to goal pt
+        thirdRightTurnDistance = CalcDirectionalArcLength(
+            c2, c2c3_tangent, goalPose[:2], Direction.RIGHT)
+        numTimeStepsForThirdRightTurn = thirdRightTurnDistance / self.car.speed
+        thirdTurn = {
+            "direction": Direction.RIGHT.name,
+            "distance": thirdRightTurnDistance,
+            "numSteps": numTimeStepsForThirdRightTurn
+        }
+        # TODO: delete the plotting code
+        circle1 = plt.Circle(c1[:2], r, color="blue", alpha=0.2)
+        circle2 = plt.Circle(c2[:2], r, color="red", alpha=0.2)
+        circle3 = plt.Circle(p3, r, color="black", alpha=0.2)
+
+        fig, ax = plt.subplots()
+        ax.add_patch(circle1)
+        ax.add_patch(circle2)
+        ax.add_patch(circle3)
+        ax.arrow(startPose[0],
+                 startPose[1],
+                 10 * cos(startPose[2]),
+                 10 * sin(startPose[2]),
+                 head_width=2)
+        ax.arrow(goalPose[0],
+                 goalPose[1],
+                 10 * cos(goalPose[2]),
+                 10 * sin(goalPose[2]),
+                 head_width=2)
+        plt.scatter(midPt[0], midPt[1])
+        plt.scatter(c1c3_tangent[0], c1c3_tangent[1])
+        plt.scatter(c2c3_tangent[0], c2c3_tangent[1])
+        ax.set_aspect("equal", adjustable='datalim')
+        plt.show()
+
+        waypoints = [startPose[:2], c1c3_tangent, c2c3_tangent, goalPose[:2]]
+        return {
+            "path": [firstTurn, secondTurn, thirdTurn],
+            "waypoints": waypoints,
+            "totalDistance": firstRightTurnDistance + secondLeftTurnDistance +
+            thirdRightTurnDistance,
+            "type": "RLR"
+        }
+
+    def GetLRL(self, startPose: np.ndarray, goalPose: np.ndarray):
+        r = self.car.turningRadius
+        _, c1 = GetAdjacentCircles(startPose, self.car.turningRadius)
+        _, c2 = GetAdjacentCircles(goalPose, self.car.turningRadius)
+        c1Toc2 = c2[:2] - c1[:2]
+        D = np.linalg.norm(c1Toc2)
+        c1Toc2 = c1Toc2 / D
+        midPt = c1[:2] + c1Toc2 * D / 2
+        # Use definition of perpendicular for vectors (can make this negative to
+        # get other tangent circle)
+        vec2p3 = np.array([c2[1] - c1[1], -(c2[0] - c1[0])]) / D
+        distMidPtToP3 = sqrt(4 * r**2 - D**2 / 4)
+        # The center of the tangent circle
+        p3 = midPt + vec2p3 * distMidPtToP3
+        c3 = np.array([p3[0], p3[1], r])
+        # Find the tangent pt between c1 and c3
+        c1ToC3 = p3 - c1[:2]
+        c1ToC3 = c1ToC3 / np.linalg.norm(c1ToC3)
+        c1c3_tangent = c1[:2] + c1ToC3 * r
+
+        # Find the tangent pt between c2 and c3
+        c2ToC3 = p3 - c2[:2]
+        c2ToC3 = c2ToC3 / np.linalg.norm(c2ToC3)
+        c2c3_tangent = c2[:2] + c2ToC3 * r
+
+        # First: Left Turn - from origin to first tangent pt
+        firstLeftTurnDistance = CalcDirectionalArcLength(
+            c1, startPose[:2], c1c3_tangent, Direction.LEFT)
+        numTimeStepsForFirstLeftTurn = firstLeftTurnDistance / self.car.speed
+        firstTurn = {
+            "direction": Direction.LEFT.name,
+            "distance": firstLeftTurnDistance,
+            "numSteps": numTimeStepsForFirstLeftTurn
+        }
+
+        # Second: Right Turn - from first tangent pt to second tangent point
+        secondRightTurnDistance = CalcDirectionalArcLength(
+            c3, c1c3_tangent, c2c3_tangent, Direction.RIGHT)
+        numTimeStepsForSecondRightTurn = secondRightTurnDistance / self.car.speed
+        secondTurn = {
+            "direction": Direction.RIGHT.name,
+            "distance": secondRightTurnDistance,
+            "numSteps": numTimeStepsForSecondRightTurn
+        }
+
+        # Third: Left Turn - from second tangent pt to goal pose
+        thirdLeftTurnDistance = CalcDirectionalArcLength(
+            c2, c2c3_tangent, goalPose[:2], Direction.LEFT)
+        numTimeStepsForThirdLeftTurn = thirdLeftTurnDistance / self.car.speed
+        thirdTurn = {
+            "direction": Direction.LEFT.name,
+            "distance": thirdLeftTurnDistance,
+            "numSteps": numTimeStepsForThirdLeftTurn
+        }
+
+        waypoints = [startPose[:2], c1c3_tangent, c2c3_tangent, goalPose[:2]]
+        # TODO: Delete this visualization code
+        circle1 = plt.Circle(c1[:2], r, color="blue", alpha=0.2)
+        circle2 = plt.Circle(c2[:2], r, color="red", alpha=0.2)
+        circle3 = plt.Circle(p3, r, color="black", alpha=0.2)
+
+        fig, ax = plt.subplots()
+        ax.add_patch(circle1)
+        ax.add_patch(circle2)
+        ax.add_patch(circle3)
+        ax.arrow(startPose[0],
+                 startPose[1],
+                 10 * cos(startPose[2]),
+                 10 * sin(startPose[2]),
+                 head_width=2)
+        ax.arrow(goalPose[0],
+                 goalPose[1],
+                 10 * cos(goalPose[2]),
+                 10 * sin(goalPose[2]),
+                 head_width=2)
+        plt.scatter(midPt[0], midPt[1])
+        plt.scatter(c1c3_tangent[0], c1c3_tangent[1])
+        plt.scatter(c2c3_tangent[0], c2c3_tangent[1])
+        ax.set_aspect("equal", adjustable='datalim')
+        plt.show()
+
+        return {
+            "path": [firstTurn, secondTurn, thirdTurn],
+            "waypoints": waypoints,
+            "totalDistance": firstLeftTurnDistance + secondRightTurnDistance +
+            thirdLeftTurnDistance,
+            "type": "LRL"
+        }
 
     def GetRSR(self, startPose: np.ndarray, goalPose: np.ndarray):
         """

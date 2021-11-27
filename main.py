@@ -187,6 +187,7 @@ def testGetDubinsPath(startPose, goalPose):
     # goalPose = np.array([50,50,0])
     # goalPose = np.array([ 79.38330078, 717.5166626, 0])
     output = pathGenerator.GetDubinsPath(startPose, goalPose)
+
     pprint(output)
     c_start_right, c_start_left = GetAdjacentCircles(startPose,
                                                      car.turningRadius)
@@ -226,12 +227,21 @@ def testGetDubinsPath(startPose, goalPose):
     # ax.set_ylim([-50, 100])
     plt.show()
 
+def testCCCPath():
+    # LRL Path
+    startPose = np.array([0,0,0])
+    goalPose = np.array([20,50,np.pi])
+    # RLR
+    startPose = np.array([0,0,np.pi])
+    goalPose = np.array([20,50,0])
+    testGetDubinsPath(startPose, goalPose)
 if __name__ == "__main__":
     # testBangBang()
     # testStep()
     # testThetaError()
     # testReedShepp()
-    testVaryingCirclesForTangents()
+    # testVaryingCirclesForTangents()
     # testAllGetCSCPath()
-    testAllGetCSCPath()
-    testBonusCasesCSCPath()
+    # testAllGetCSCPath()
+    # testBonusCasesCSCPath()
+    testCCCPath()

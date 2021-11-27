@@ -28,20 +28,25 @@ def test_rightAndLeftTurnArcLen():
 
 def test_getAdjacentCircles():
     r = 1
-    pose = [1,1,-np.pi/4]
-    c1,c2 = GetAdjacentCircles(pose, r)
-    print(c1)
-    print(c2)
-    # Visualize the 2 circles
-    # circle1 = plt.Circle(c1[:2], c1[2], color="blue", alpha=0.5)
-    # circle2 = plt.Circle(c2[:2], c2[2], color="red", alpha=0.5)
-    # fig, ax = plt.subplots()
-    # ax.add_patch(circle1)
-    # ax.add_patch(circle2)
-    # ax.set_aspect("equal", adjustable='datalim')
-    # ax.set_xlim([-5,10])
-    # ax.set_ylim([-5,10])
-    # plt.show()
+    startPose = [0,0,0]
+    goalPose = [1,1,0]
+    c1,c2 = GetAdjacentCircles(startPose, r)
+    c3,c4 = GetAdjacentCircles(goalPose, r)
+    
+    # Visualize the 4 circles
+    circle1 = plt.Circle(c1[:2], c1[2], color="blue", alpha=0.5)
+    circle2 = plt.Circle(c2[:2], c2[2], color="red", alpha=0.5)
+    circle3 = plt.Circle(c3[:2], c3[2], color="black", alpha=0.5)
+    circle4 = plt.Circle(c4[:2], c4[2], color="yellow", alpha=0.5)
+    fig, ax = plt.subplots()
+    ax.add_patch(circle1)
+    ax.add_patch(circle2)
+    ax.add_patch(circle3)
+    ax.add_patch(circle4)
+    ax.set_aspect("equal", adjustable='datalim')
+    ax.set_xlim([-5,10])
+    ax.set_ylim([-5,10])
+    plt.show()
 def test_calculateAngleBetween1():
     v1 = np.array([1,0])
     v2 = np.array([0,1])
