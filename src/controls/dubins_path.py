@@ -41,9 +41,9 @@ class DubinsPath:
         
         if left_circle_dist < 4 * r or right_circle_dist < 4*r: 
             if left_circle_dist < right_circle_dist:
-                return self.GetRLR(startPose, goalPose)
-            elif right_circle_dist < left_circle_dist:
                 return self.GetLRL(startPose, goalPose)
+            elif right_circle_dist < left_circle_dist:
+                return self.GetRLR(startPose, goalPose)
             else:
                 lrl_output = self.GetLRL(startPose, goalPose)
                 rlr_output = self.GetRLR(startPose, goalPose)
