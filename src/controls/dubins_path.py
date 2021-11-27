@@ -8,6 +8,7 @@ from ..dynamics.dubins_car import DubinsCar
 Notes: Due to the fact that in Dubins Path, all circles are the same radius
 and circles are stored as (x,y,r), np.linalg.norm(c1-c2) will be the same as
 np.linalg.norm(c1[:2] - c2[:2]) 
+
 """
 
 
@@ -41,8 +42,12 @@ class DubinsPath:
         if left_circle_dist < 4 * r or right_circle_dist < 4*r: 
             if left_circle_dist < right_circle_dist:
                 return self.GetLRL(startPose, goalPose)
-            else:
+            elif right_circle_dist < left_circle_dist:
                 return self.GetRLR(startPose, goalPose)
+            else:
+                lrl_output = self.GetLRL(startPose, goalPose)
+                rlr_output = self.GetRLR(startPose, goalPose)
+                return lrl_output if lrl_output["totalDistance"] < rlr_output["totalDistance"] else rlr_output
         else:
             return self.GetCSCPath(startPose, goalPose)
 
