@@ -45,6 +45,8 @@ class DubinsPath:
             elif right_circle_dist < left_circle_dist:
                 return self.GetRLR(startPose, goalPose)
             else:
+                print(f"{left_circle_dist=}")
+                print(f"{right_circle_dist=}")
                 print("PANIK! this should be impossible")
         else:
             return self.GetCSCPath(startPose, goalPose)
