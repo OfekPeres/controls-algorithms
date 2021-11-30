@@ -32,7 +32,7 @@ class BangBang:
         maxControlInputs = timeStepsToTurnCircle + timeStepsToGoStraightToTarget
         # THINK ABOUT THIS CUTOFF CASE
         phis = []
-        while distToGoal > 1e-3:
+        while distToGoal > 1:
             phi = self.GetPhi(target)
             phis.append(phi)
             self.car.step(phi)
