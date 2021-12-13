@@ -3,3 +3,5 @@ __pycache__
 *.xlsx
 .vscode/
 .pytest_cache
+.DS_Store
+plots/
