@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ..dynamics.dubins_car import DubinsCar
 """
+The DubinsPath class models the path taken by a DubinsCar when navigating from a starting position to a goal position.
 Notes: Due to the fact that in Dubins Path, all circles are the same radius
 and circles are stored as (x,y,r), np.linalg.norm(c1-c2) will be the same as
 np.linalg.norm(c1[:2] - c2[:2]) 
@@ -17,14 +18,15 @@ class DubinsPath:
         self.car = pCar
 
     def GetDubinsPath(self, startPose: np.ndarray, goalPose: np.ndarray):
-        """
-        Given a starting orientation and an ending orientation, picks the 
-        correct dubins path and calculates it
-        @param startPose - the initial position of the car (x,y,theta)
-        @param goalPose - the final position of the car (x,y,theta)
-        @returns a dictionary with the form {path: [path elements], 
-        waypoints:[4 points to travel to]}.
-        """
+        '''Calculates a path for Dubin's Car given starting and ending orientations.
+
+        Args: 
+            startPose (numpy array): Initial position of Dubin's car (x,y,theta)
+            goalPose (numpy array): Final position of Dubin's car (x,y,theta)
+        Returns: 
+            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+        
+        '''
 
         # Check if LRL is feasible by checking if the two left circles are
         # within 4*turning_radius of each other
@@ -52,21 +54,15 @@ class DubinsPath:
             return self.GetCSCPath(startPose, goalPose)
 
     def GetCSCPath(self, startPose: np.ndarray, goalPose: np.ndarray):
-        """
-        The shortest dubins path will correspond to the path between the two
-        closest adjacent circles. i.e. if the right start circle is closest to 
-        the right goal circle, the path with will be RSR
+        '''Calculates a path for Dubin's Car along two circular arcs separated by a straight line.
 
-        RSR -> c_start_right closest to c_goal_right
-        LSL -> c_start_left closest to c_goal_left
-        RSL -> c_start_right closest to c_goal_left
-        LSR -> c_start_left closest to c_goal_right
-
-        @param start: start pose (x,y,theta)
-        @param goal: goal pose (x,y,theta)
-        @returns a dictionary with the form {path: [path elements], 
-        waypoints:[4 points to travel to]}.
-        """
+        Args: 
+            startPose (numpy array): Initial position of Dubin's car (x,y,theta)
+            goalPose (numpy array): Final position of Dubin's car (x,y,theta)
+        Returns: 
+            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+        
+        '''
         c_start_right, c_start_left = GetAdjacentCircles(
             startPose, self.car.turningRadius)
         c_goal_right, c_goal_left = GetAdjacentCircles(goalPose,
@@ -84,11 +80,28 @@ class DubinsPath:
         return pathFunctions[shortestPathIndex](startPose, goalPose)
 
     def GetCCCPath(self, startPose: np.ndarray, goalPose: np.ndarray):
+        '''Calculates a path for Dubin's Car along three circular arcs 
 
+        Args: 
+            startPose (numpy array): Initial position of Dubin's car (x,y,theta)
+            goalPose (numpy array): Final position of Dubin's car (x,y,theta)
+        Returns: 
+            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+        
+        '''
         self.GetLRL(startPose, goalPose)
         return None
 
     def GetRLR(self, startPose: np.ndarray, goalPose: np.ndarray):
+        '''Calculates a path for Dubin's Car along two right-hand circular arcs separated by a left-hand circular arc.
+
+        Args: 
+            startPose (numpy array): Initial position of Dubin's car (x,y,theta)
+            goalPose (numpy array): Final position of Dubin's car (x,y,theta)
+        Returns: 
+            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+        
+        '''
         r = self.car.turningRadius
         c1, _ = GetAdjacentCircles(startPose, self.car.turningRadius)
         c2, _ = GetAdjacentCircles(goalPose, self.car.turningRadius)
@@ -156,6 +169,15 @@ class DubinsPath:
         }
 
     def GetLRL(self, startPose: np.ndarray, goalPose: np.ndarray):
+        '''Calculates a path for Dubin's Car along two left-hand circular arcs separated by a right-hand circular arc.
+
+        Args: 
+            startPose (numpy array): Initial position of Dubin's car (x,y,theta)
+            goalPose (numpy array): Final position of Dubin's car (x,y,theta)
+        Returns: 
+            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+        
+        '''
         r = self.car.turningRadius
         _, c1 = GetAdjacentCircles(startPose, self.car.turningRadius)
         _, c2 = GetAdjacentCircles(goalPose, self.car.turningRadius)
@@ -221,14 +243,15 @@ class DubinsPath:
         }
 
     def GetRSR(self, startPose: np.ndarray, goalPose: np.ndarray):
-        """
-        Get the Right -> Straight -> Right path
-        @param start: start pose (x,y,theta)
-        @param goal: goal pose (x,y,theta)
-        @param r: the turning radius of the car
-        @returns a dictionary with the form {path: [path elements], 
-        waypoints:[4 points to travel to]}.
-        """
+        '''Calculates a path for Dubin's Car along two right-hand circular arcs separated by a straight line.
+
+        Args: 
+            startPose (numpy array): Initial position of Dubin's car (x,y,theta)
+            goalPose (numpy array): Final position of Dubin's car (x,y,theta)
+        Returns: 
+            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+        
+        '''
         r = self.car.turningRadius
         # Pick the "Right" adjacent Circles as on the RSR path they will be the
         # circles the car drives on
@@ -276,14 +299,15 @@ class DubinsPath:
         }
 
     def GetLSL(self, startPose: np.ndarray, goalPose: np.ndarray):
-        """
-        Get the Left -> Straight -> Left path
-        @param start: start pose (x,y,theta)
-        @param goal: goal pose (x,y,theta)
-        @param r: the turning radius of the car
-        @returns a dictionary with the form {path: [path elements], 
-        waypoints:[4 points to travel to]}.
-        """
+        '''Calculates a path for Dubin's Car along two left-hand circular arcs separated by a straight line.
+
+        Args: 
+            startPose (numpy array): Initial position of Dubin's car (x,y,theta)
+            goalPose (numpy array): Final position of Dubin's car (x,y,theta)
+        Returns: 
+            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+        
+        '''
         r = self.car.turningRadius
         # Pick the "Left" adjacent Circles as on the LSL path they will be the
         # circles the car drives on
@@ -330,14 +354,15 @@ class DubinsPath:
         }
 
     def GetLSR(self, startPose: np.ndarray, goalPose: np.ndarray):
-        """
-        Get the Left -> Straight -> Right path
-        @param start: start pose (x,y,theta)
-        @param goal: goal pose (x,y,theta)
-        @param r: the turning radius of the car
-        @returns a dictionary with the form {path: [path elements], 
-        waypoints:[4 points to travel to]}.
-        """
+        '''Calculates a path for Dubin's Car along a path that takes a left-hand circular arc, a straight line and a right-hand circular arc.
+
+        Args: 
+            startPose (numpy array): Initial position of Dubin's car (x,y,theta)
+            goalPose (numpy array): Final position of Dubin's car (x,y,theta)
+        Returns: 
+            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+        
+        '''
         r = self.car.turningRadius
         # Pick the "Left" adjacent Circles as on the LSL path they will be the
         # circles the car drives on
@@ -387,14 +412,15 @@ class DubinsPath:
         }
 
     def GetRSL(self, startPose: np.ndarray, goalPose: np.ndarray):
-        """
-        Get the Right -> Straight -> Left path
-        @param start: start pose (x,y,theta)
-        @param goal: goal pose (x,y,theta)
-        @param r: the turning radius of the car
-        @returns a dictionary with the form {path: [path elements], 
-        waypoints:[4 points to travel to]}.
-        """
+        '''Calculates a path for Dubin's Car along a path that takes a right-hand circular arc, a straight line and a left-hand circular arc.
+
+        Args: 
+            startPose (numpy array): Initial position of Dubin's car (x,y,theta)
+            goalPose (numpy array): Final position of Dubin's car (x,y,theta)
+        Returns: 
+            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+        
+        '''
         r = self.car.turningRadius
         # Pick the "Left" adjacent Circles as on the LSL path they will be the
         # circles the car drives on
