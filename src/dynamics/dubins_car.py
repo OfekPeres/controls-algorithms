@@ -10,12 +10,12 @@ class DubinsCar:
     '''Initializes a Dubins Car Instance
 
     Args:
-        l: length of the car.
-        x: initial x position.
-        y: initial y position.
-        theta: initial orientation.
-        initialPhi: initial wheel orientation.
-        maxSpeed: the max speed of the car.
+        l (float): length of the car.
+        x (float): initial x position.
+        y (float): initial y position.
+        theta (float): initial orientation.
+        initialPhi (float): initial wheel orientation.
+        maxSpeed float(): the max speed of the car.
     Returns:
         An instance of DubinsCar 
         

@@ -43,9 +43,6 @@ PID
    :show-inheritance:
 
 
-Module contents
----------------
-
 .. automodule:: src.controls
    :members:
    :undoc-members:

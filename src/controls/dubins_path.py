@@ -79,19 +79,6 @@ class DubinsPath:
         shortestPathIndex = np.argmin(distances)
         return pathFunctions[shortestPathIndex](startPose, goalPose)
 
-    def GetCCCPath(self, startPose: np.ndarray, goalPose: np.ndarray):
-        '''Calculates a path for Dubin's Car along three circular arcs 
-
-        Args: 
-            startPose (numpy array): Initial position of Dubin's car (x,y,theta)
-            goalPose (numpy array): Final position of Dubin's car (x,y,theta)
-        Returns: 
-            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
-        
-        '''
-        self.GetLRL(startPose, goalPose)
-        return None
-
     def GetRLR(self, startPose: np.ndarray, goalPose: np.ndarray):
         '''Calculates a path for Dubin's Car along two right-hand circular arcs separated by a left-hand circular arc.
 
