@@ -13,8 +13,8 @@
 import sphinx_rtd_theme
 import os
 import sys
-sys.path.insert(0, '/Users/Ofek/Desktop/Ofek Documents/Princeton/Master/Python Projects/ControlAlgorithms/src')
-sys.path.insert(0, '/Users/Ofek/Desktop/Ofek Documents/Princeton/Master/Python Projects/ControlAlgorithms/')
+sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), '..', 'src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), '..')))
 
 
 # -- Project information -----------------------------------------------------
