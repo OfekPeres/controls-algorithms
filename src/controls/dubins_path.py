@@ -1,9 +1,3 @@
-from math import atan2, cos, sin, acos, sqrt
-from pprint import pprint
-from .dubins_path_utils import CalcDirectionalArcLength, Direction, GetAdjacentCircles, GetInnerTangentPointsAndLines, GetOuterTangentPointsAndLines, PickTangentLine
-import numpy as np
-import matplotlib.pyplot as plt
-from ..dynamics.dubins_car import DubinsCar
 """
 The DubinsPath class models the path taken by a DubinsCar when navigating from a starting position to a goal position.
 Notes: Due to the fact that in Dubins Path, all circles are the same radius
@@ -12,6 +6,12 @@ np.linalg.norm(c1[:2] - c2[:2])
 
 """
 
+from math import atan2, cos, sin, acos, sqrt
+from pprint import pprint
+from .dubins_path_utils import CalcDirectionalArcLength, Direction, GetAdjacentCircles, GetInnerTangentPointsAndLines, GetOuterTangentPointsAndLines, PickTangentLine
+import numpy as np
+import matplotlib.pyplot as plt
+from ..dynamics.dubins_car import DubinsCar
 
 class DubinsPath:
     def __init__(self, pCar: DubinsCar) -> None:

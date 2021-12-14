@@ -1,3 +1,8 @@
+"""
+This file contains helper functions needed for the Dubins Path Control Algorithm 
+module. 
+"""
+
 import numpy as np
 from math import atan, asin, atan2, sin, cos, sqrt, acos
 from enum import Enum
@@ -10,13 +15,16 @@ class Direction(Enum):
 
 
 def calculateAngleBetween(v1: np.ndarray, v2: np.ndarray):
-    """
-    Calculates the angle between 2 vectors
-    @param v1 (x,y)
-    @param v2 (x,y)
-    @returns the signed angle between the start pose vector and the vector to the
-    goal point
-    """
+    '''Calculates the signed angle between two pose vectors
+
+    Args:
+        v1 (np.ndarry): start pose vector
+        v2 (np.ndarray): end pose vector
+    Returns:
+        Float: The signed angle between v1 and v2 
+        
+    '''
+
     # Calculate the signed angle between two vectors (can potentially be
     # done with the "perpendicular dot product" but here is accomplished
     # by utilizing code inspired by p5.js source code for the angleBetween
@@ -28,13 +36,17 @@ def calculateAngleBetween(v1: np.ndarray, v2: np.ndarray):
 
 def CalcDirectionalArcLength(c1: np.ndarray, p2: np.ndarray, p3: np.ndarray,
                              direction: Direction) -> float:
-    """
-    @param c1 the circle of interest of the form (x,y,r)
-    @param p2 a starting point on the circumference of the circle of the form (x,y)
-    @param p3 a ending point on the circumference of the circle of the form (x,y)
-    @param direction the direction of travel allowed on the circle
-    @returns the directional arc length between the two points
-    """
+    '''Calculates the arc length between two points on a circle
+
+    Args:
+        c1 (np.ndarray): input circle (center_x,center_y,radius)
+        p2 (np.ndarray): point one on the circle (x,y)
+        p3 (np.ndarray): point two on the circle (x,y)
+        direction (Direction): left or right 
+    Returns:
+        Float: the arc length between p2 and p3
+
+    '''
     p1 = c1[:2]
     r = c1[2]
     v1 = p2 - p1
@@ -48,14 +60,17 @@ def CalcDirectionalArcLength(c1: np.ndarray, p2: np.ndarray, p3: np.ndarray,
     return abs(theta * r)
 
 def CalcDirectionArcAngle(c1:np.ndarray, p2:np.ndarray, p3:np.ndarray, direction:Direction):
-    """
-    Get the directional angle between two points on a circle
-    @param c1 the circle of interest of the form (x,y,r)
-    @param p2 a starting point on the circumference of the circle of the form (x,y)
-    @param p3 a ending point on the circumference of the circle of the form (x,y)
-    @param direction the direction of travel allowed on the circle
-    @returns the directional arc length between the two points
-    """
+    '''Calculates the directional angle between two points on a circle
+
+    Args:
+        c1 (np.ndarray): input circle (center_x,center_y,radius)
+        p2 (np.ndarray): starting point on the circle circumference (x,y)
+        p3 (np.ndarray): ending point on the circle circumference (x,y)
+        direction (Direction): left or right 
+    Returns:
+        Float: the (directional) arc angle between p2 and p3
+
+    '''
     p1 = c1[:2]
     v1 = p2 - p1
     v2 = p3 - p1
@@ -69,19 +84,18 @@ def CalcDirectionArcAngle(c1:np.ndarray, p2:np.ndarray, p3:np.ndarray, direction
 
 
 def GetOuterTangentPointsAndLines(c1: np.ndarray, c2: np.ndarray):
-    """
-    Both define a circle
-    c2 is an array of (x2,y2,r2)
-    c1 is an array of (x1,y1,r1)
-    
+    '''Calculates the outer tangent points and lines between two circles
     https://en.wikipedia.org/wiki/Tangent_lines_to_circles
-    
-    @param c1 the array describing c1 (x,y,r)
-    @param c2 the array describing c2 (x,y,r)
-    @returns the 4 potential tangent points in order of 
-    [c1 up-right, c1 down-left, c2 up-right, c2 down-left]
-    and returns the tangent lines [line above, line below]
-    """
+
+    Args:
+        c1 (np.ndarray): circle 1 (center_x,center_y,radius)
+        c2 (np.ndarray): circle 2 (center_x,center_y,radius)
+    Returns:
+        Tuple: (4 potential tangent points, Outer Tangent lines between tangent points)
+               ([c1 up-right, c1 down-left, c2 up-right, c2 down-left], 
+               [[c1 up-right, c2 up-right], [c1 down-left, c2 down-left]])
+
+    '''
 
     # Calculate Outer tangents
     x1, y1, r1 = c1
@@ -112,14 +126,19 @@ def GetOuterTangentPointsAndLines(c1: np.ndarray, c2: np.ndarray):
 
 
 def GetInnerTangentPointsAndLines(c1, c2):
-    """
-    c1 and c2 are both circles of form (x, y, r)
+    '''Calculates the inner tangent points and lines between two circles
     https://math.stackexchange.com/questions/719758/inner-tangent-between-two-circles-formula
-    @param c1 circle of the form (x,y,r)
-    @param c2 circle of the form (x,y,r)
-    @returns None, None if the circles overlap
-    otherwise returns a tuple of the form (4 tangent points, 2 inner tangent lines)
-    """
+
+    Args:
+        c1 (np.ndarray): circle 1 (center_x,center_y,radius)
+        c2 (np.ndarray): circle 2 (center_x,center_y,radius)
+    Returns:
+        Tuple: (4 potential tangent points, Outer Tangent lines between tangent points)
+               ([c1 top, c2 bottom, c1 bottom, c2 top], 
+               [[c1 top, c2 bottom], [c1 bottom, c2 top]])
+
+    '''
+
     x1, y1, r1 = c1
     x2, y2, r2 = c2
     eps = 1e-20
@@ -156,15 +175,16 @@ def GetInnerTangentPointsAndLines(c1, c2):
 
 
 def GetAdjacentCircles(p, r):
-    """
-    Given a pose p (x, y, theta) and a turning radius r, calculate the dubins
-    circles around the pose
+    '''Given a pose, p (x, y, theta) and a turning radius r, calculate the dubins circles around the pose
 
-    @param p the pose of the car to calculate the turning circles for (x,y,theta)
-    @param r, the turning radius of the car
-    @returns the the two turning circles of (cx, cy, r) [right circle, left circle] 
-    orientation is relative to the pose of the car
-    """
+    Args:
+        p (np.ndarray): the pose of the car (x,y,theta)
+        r (float): turning radius of the car
+    Returns:
+        List: Two turning circles [[x1_center,y1_center,r1],[x2_center,y2_center,r2]]
+
+    '''
+
     x, y, theta = p
     cx_right = x + r * cos(theta - np.pi / 2)
     cy_right = y + r * sin(theta - np.pi / 2)
@@ -177,18 +197,21 @@ def GetAdjacentCircles(p, r):
 def PickTangentLine(startPose: np.ndarray, goalPose: np.ndarray, radius: float,
                     startCircleDirection: Direction,
                     goalCircleDirection: Direction):
-    """
-    A function that picks the correct tangent line for a dubins car to travel
+    '''A function that picks the correct tangent line for a dubins car to travel
     over between a start pose and an end pose when knowing which turns it is
     supposed to make (i.e. if it knows its RSR vs LSR)
-    @param startPose (x, y, theta)
-    @param goalPose (x, y, theta)
-    @param radius the turning radius
-    @param startCircleDirection the first turning direction
-    @param goalCircleDirection the second turning direction
-    @returns the pair of points that creates the tangent line to travel from the 
-    start circle to the goal circle
-    """
+
+    Args:
+        startPose (np.ndarray): the start pose of the car (x,y,theta)
+        goalPose (np.ndarray): the goal pose of the car (x,y,theta)
+        radius (float): the turning radius of the car
+        startCircleDirection (Direction): first turning direction
+        goalCircleDirection (Direction): end turning direction
+    Returns:
+        List: the pair of points that creates the tangent line to travel from the 
+              start circle to the goal circle [[x,y],[x,y]]
+
+    '''
     x1, y1, theta1 = startPose
     # Pick the correct start circle
     start_circle_right, start_circle_left = GetAdjacentCircles(
