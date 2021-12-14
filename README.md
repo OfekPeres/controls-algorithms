@@ -1,5 +1,6 @@
 # controls-algorithms
 
+See the live docs at: [https://ofekperes.github.io/controls-algorithms/](https://ofekperes.github.io/controls-algorithms/)
 # First time generating initial Sphinx docs
 Run the following line from the root project directory
 ```
