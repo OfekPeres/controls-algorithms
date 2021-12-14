@@ -14,3 +14,5 @@ git commit -m "Updating live docs"
 git push
 
 git checkout main
+
+rm .buildinfo
