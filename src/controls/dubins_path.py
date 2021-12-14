@@ -24,7 +24,7 @@ class DubinsPath:
             startPose (numpy array): Initial position of Dubin's car (x,y,theta)
             goalPose (numpy array): Final position of Dubin's car (x,y,theta)
         Returns: 
-            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
         
         '''
 
@@ -60,7 +60,7 @@ class DubinsPath:
             startPose (numpy array): Initial position of Dubin's car (x,y,theta)
             goalPose (numpy array): Final position of Dubin's car (x,y,theta)
         Returns: 
-            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
         
         '''
         c_start_right, c_start_left = GetAdjacentCircles(
@@ -86,7 +86,7 @@ class DubinsPath:
             startPose (numpy array): Initial position of Dubin's car (x,y,theta)
             goalPose (numpy array): Final position of Dubin's car (x,y,theta)
         Returns: 
-            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
         
         '''
         self.GetLRL(startPose, goalPose)
@@ -99,7 +99,7 @@ class DubinsPath:
             startPose (numpy array): Initial position of Dubin's car (x,y,theta)
             goalPose (numpy array): Final position of Dubin's car (x,y,theta)
         Returns: 
-            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
         
         '''
         r = self.car.turningRadius
@@ -175,7 +175,7 @@ class DubinsPath:
             startPose (numpy array): Initial position of Dubin's car (x,y,theta)
             goalPose (numpy array): Final position of Dubin's car (x,y,theta)
         Returns: 
-            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
         
         '''
         r = self.car.turningRadius
@@ -249,7 +249,7 @@ class DubinsPath:
             startPose (numpy array): Initial position of Dubin's car (x,y,theta)
             goalPose (numpy array): Final position of Dubin's car (x,y,theta)
         Returns: 
-            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
         
         '''
         r = self.car.turningRadius
@@ -305,7 +305,7 @@ class DubinsPath:
             startPose (numpy array): Initial position of Dubin's car (x,y,theta)
             goalPose (numpy array): Final position of Dubin's car (x,y,theta)
         Returns: 
-            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
         
         '''
         r = self.car.turningRadius
@@ -360,7 +360,7 @@ class DubinsPath:
             startPose (numpy array): Initial position of Dubin's car (x,y,theta)
             goalPose (numpy array): Final position of Dubin's car (x,y,theta)
         Returns: 
-            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
         
         '''
         r = self.car.turningRadius
@@ -418,7 +418,7 @@ class DubinsPath:
             startPose (numpy array): Initial position of Dubin's car (x,y,theta)
             goalPose (numpy array): Final position of Dubin's car (x,y,theta)
         Returns: 
-            A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
+            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} 
         
         '''
         r = self.car.turningRadius
