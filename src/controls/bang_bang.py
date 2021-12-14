@@ -4,6 +4,7 @@ and the location of a given target node.
 
 The class has helper methods which return instructions for the Dubin's 
 car to reach its goal. 
+
 """
 
 import math
@@ -12,26 +13,27 @@ from ..dynamics.dubins_car import DubinsCar
 
 
 class BangBang:
-    
-    def __init__(self, points, car: DubinsCar) -> None:
-        '''
-        points is an array of dictionarys with desired x and y values outputted 
-        from any path planning algorithm
-        each point in points is a dictionary of the form {x:val, y:val2}
+    '''Points is an array of dictionarys with desired x and y values outputted 
+    from any path planning algorithm each point in points is a dictionary of the 
+    form {x:val, y:val2}
+    Args: 
+        points (np.ndarray): an array of required waypoints
+        car (DubinsCar): a Dubin's car object 
 
-        '''
+    Return:
+        An instance of the BangBang class
+
+    '''
+
+
+    def __init__(self, points, car: DubinsCar) -> None:
+
         self.points = points
         self.car = car
 
     def GetPhi(self, target):
         '''Returns steering angle
-
-            Args:
-        target: a point with an x and y position.
- 
-            Returns:
-        float: steering angle (left or right) for Dubin's car.
-
+     
         Phi is the steeing angle of the front wheels of a Dubin's car. This method
         calcualtes 'theta error', which is the difference between the car's current
         orientation and the required orientation to point directly at the target.
@@ -40,6 +42,13 @@ class BangBang:
 
         To eliminate oscilation at small theta errors, steering is only implemented for theta errors above
         the tolerance epsilon (eps).
+
+
+        Args:
+            target: a point with an x and y position.
+ 
+        Returns:
+            float: steering angle (left or right) for Dubin's car.
 
         '''
         thetaError = self.car.calcThetaError(target)
@@ -53,18 +62,19 @@ class BangBang:
             return 0
 
     def GetControlInputsToTarget(self, target):
-        '''Returns array of steering angles to get from current poisition to target
-
-            Args:
-        target: a point with x and y position.
- 
-            Returns:
-        float[]: an array of steering angles for a Dubin's car. 
-        
+        '''Returns array of steering angles to get from current position to target
 
         This function takes in a Dubin's car and a target node. It returns an array,
         phis, which specifiy steering angle at each time step between the current state
         and its goal. 
+
+        Args:
+            target: a point with x and y position.
+ 
+        Returns:
+            float[]: an array of steering angles for a Dubin's car. 
+        
+
         '''
         distToGoal = np.linalg.norm(self.car.pos - target)
         maxThetaDot = (self.car.speed/self.car.l)*np.tan(self.car.maxSteer)
@@ -90,10 +100,9 @@ class BangBang:
     def GetControlTrajectory(self):
         '''Calculates an array of steering angles for a series of target points
 
-            Returns: 
-        float[]: an array of steering angles for a series of target points. 
+        Returns: 
+            float[]: an array of steering angles for a series of target points. 
 
-        This method returns u, an array of steering angles to hit each of the waypoints.
         '''
         u = []
         for point in self.points:
