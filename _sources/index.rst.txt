@@ -1,5 +1,8 @@
 Welcome to ControlAlgorithms's documentation!
 =============================================
+These docs contain information about a variety of different control algorithms
+and dynamical systems they work on.
+
 Go back to the code: https://github.com/OfekPeres/controls-algorithms
 
 .. toctree::
