@@ -1,5 +1,6 @@
 Welcome to ControlAlgorithms's documentation!
 =============================================
+Go back to the code: https://github.com/OfekPeres/controls-algorithms
 
 .. toctree::
    :maxdepth: 4

@@ -9,3 +9,5 @@ plots/
 _build/
 _static/
 _templates/
+docs/
+.buildinfo
