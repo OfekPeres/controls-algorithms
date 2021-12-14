@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.controls.dubins_path &mdash; Control Algorithms 0.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> Control Algorithms
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../src.controls.html">Controls</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../src.dynamics.html">Dynamics</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Control Algorithms</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>src.controls.dubins_path</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.controls.dubins_path</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The DubinsPath class models the path taken by a DubinsCar when navigating from a starting position to a goal position.</span>
+<span class="sd">Notes: Due to the fact that in Dubins Path, all circles are the same radius</span>
+<span class="sd">and circles are stored as (x,y,r), np.linalg.norm(c1-c2) will be the same as</span>
+<span class="sd">np.linalg.norm(c1[:2] - c2[:2]) </span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">atan2</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span> <span class="n">acos</span><span class="p">,</span> <span class="n">sqrt</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">.dubins_path_utils</span> <span class="kn">import</span> <span class="n">CalcDirectionalArcLength</span><span class="p">,</span> <span class="n">Direction</span><span class="p">,</span> <span class="n">GetAdjacentCircles</span><span class="p">,</span> <span class="n">GetInnerTangentPointsAndLines</span><span class="p">,</span> <span class="n">GetOuterTangentPointsAndLines</span><span class="p">,</span> <span class="n">PickTangentLine</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">..dynamics.dubins_car</span> <span class="kn">import</span> <span class="n">DubinsCar</span>
+
+<div class="viewcode-block" id="DubinsPath"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path.DubinsPath">[docs]</a><span class="k">class</span> <span class="nc">DubinsPath</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pCar</span><span class="p">:</span> <span class="n">DubinsCar</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">car</span> <span class="o">=</span> <span class="n">pCar</span>
+
+<div class="viewcode-block" id="DubinsPath.GetDubinsPath"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path.DubinsPath.GetDubinsPath">[docs]</a>    <span class="k">def</span> <span class="nf">GetDubinsPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Calculates a path for Dubin&#39;s Car given starting and ending orientations.</span>
+
+<span class="sd">        Args: </span>
+<span class="sd">            startPose (numpy array): Initial position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">            goalPose (numpy array): Final position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">        Returns: </span>
+<span class="sd">            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} </span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># Check if LRL is feasible by checking if the two left circles are</span>
+        <span class="c1"># within 4*turning_radius of each other</span>
+        <span class="c1"># repeat for RLR, if not feasible do CSC paths</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span>
+        <span class="n">c_start_right</span><span class="p">,</span> <span class="n">c_start_left</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="n">c_goal_right</span><span class="p">,</span> <span class="n">c_goal_left</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">goalPose</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="c1"># Check LRL</span>
+        <span class="n">left_circle_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c_start_left</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">c_goal_left</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">right_circle_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c_start_right</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span>
+                                           <span class="n">c_goal_right</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="c1"># Pick the path algorithm based on which turning circles are closest!</span>
+        
+        <span class="k">if</span> <span class="n">left_circle_dist</span> <span class="o">&lt;</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">r</span> <span class="ow">or</span> <span class="n">right_circle_dist</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="o">*</span><span class="n">r</span><span class="p">:</span> 
+            <span class="k">if</span> <span class="n">left_circle_dist</span> <span class="o">&lt;</span> <span class="n">right_circle_dist</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetLRL</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">right_circle_dist</span> <span class="o">&lt;</span> <span class="n">left_circle_dist</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetRLR</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lrl_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetLRL</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">)</span>
+                <span class="n">rlr_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetRLR</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">lrl_output</span> <span class="k">if</span> <span class="n">lrl_output</span><span class="p">[</span><span class="s2">&quot;totalDistance&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">rlr_output</span><span class="p">[</span><span class="s2">&quot;totalDistance&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="n">rlr_output</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCSCPath</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DubinsPath.GetCSCPath"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path.DubinsPath.GetCSCPath">[docs]</a>    <span class="k">def</span> <span class="nf">GetCSCPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Calculates a path for Dubin&#39;s Car along two circular arcs separated by a straight line.</span>
+
+<span class="sd">        Args: </span>
+<span class="sd">            startPose (numpy array): Initial position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">            goalPose (numpy array): Final position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">        Returns: </span>
+<span class="sd">            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} </span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">c_start_right</span><span class="p">,</span> <span class="n">c_start_left</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span>
+            <span class="n">startPose</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span><span class="p">)</span>
+        <span class="n">c_goal_right</span><span class="p">,</span> <span class="n">c_goal_left</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">goalPose</span><span class="p">,</span>
+                                                       <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span><span class="p">)</span>
+
+        <span class="n">RSR_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c_start_right</span> <span class="o">-</span> <span class="n">c_goal_right</span><span class="p">)</span>
+        <span class="n">LSL_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c_start_left</span> <span class="o">-</span> <span class="n">c_goal_left</span><span class="p">)</span>
+        <span class="n">RSL_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c_start_right</span> <span class="o">-</span> <span class="n">c_goal_left</span><span class="p">)</span>
+        <span class="n">LSR_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c_start_left</span> <span class="o">-</span> <span class="n">c_goal_right</span><span class="p">)</span>
+
+        <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">RSR_dist</span><span class="p">,</span> <span class="n">LSL_dist</span><span class="p">,</span> <span class="n">RSL_dist</span><span class="p">,</span> <span class="n">LSR_dist</span><span class="p">])</span>
+        <span class="n">pathFunctions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">GetRSR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetLSL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetRSL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetLSR</span><span class="p">])</span>
+        <span class="n">shortestPathIndex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pathFunctions</span><span class="p">[</span><span class="n">shortestPathIndex</span><span class="p">](</span><span class="n">startPose</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DubinsPath.GetRLR"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path.DubinsPath.GetRLR">[docs]</a>    <span class="k">def</span> <span class="nf">GetRLR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Calculates a path for Dubin&#39;s Car along two right-hand circular arcs separated by a left-hand circular arc.</span>
+
+<span class="sd">        Args: </span>
+<span class="sd">            startPose (numpy array): Initial position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">            goalPose (numpy array): Final position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">        Returns: </span>
+<span class="sd">            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} </span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span>
+        <span class="n">c1</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span><span class="p">)</span>
+        <span class="n">c2</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">goalPose</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span><span class="p">)</span>
+        <span class="n">c1Toc2</span> <span class="o">=</span> <span class="n">c2</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c1Toc2</span><span class="p">)</span>
+        <span class="c1"># normalize c1Toc2</span>
+        <span class="n">c1Toc2</span> <span class="o">=</span> <span class="n">c1Toc2</span> <span class="o">/</span> <span class="n">D</span>
+        <span class="n">midPt</span> <span class="o">=</span> <span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">c1Toc2</span> <span class="o">*</span> <span class="n">D</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="c1"># Use the definition of perpendicular to get direction to center of c3</span>
+        <span class="n">vec2p3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">c2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="p">(</span><span class="n">c2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">c1</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span> <span class="o">/</span> <span class="n">D</span>
+        <span class="c1"># From geometry</span>
+        <span class="n">distMidPtToP3</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">D</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="c1"># The center of the tangent circle</span>
+        <span class="n">p3</span> <span class="o">=</span> <span class="n">midPt</span> <span class="o">+</span> <span class="n">vec2p3</span> <span class="o">*</span> <span class="n">distMidPtToP3</span>
+        <span class="n">c3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p3</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p3</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">r</span><span class="p">])</span>
+
+        <span class="c1"># Find the tangent pt between c1 and c3</span>
+        <span class="n">c1Toc3</span> <span class="o">=</span> <span class="n">c3</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">c1Toc3</span> <span class="o">=</span> <span class="n">c1Toc3</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c1Toc3</span><span class="p">)</span>
+        <span class="n">c1c3_tangent</span> <span class="o">=</span> <span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">c1Toc3</span> <span class="o">*</span> <span class="n">r</span>
+
+        <span class="c1"># Find the tangent pt between c2 and c3</span>
+        <span class="n">c2ToC3</span> <span class="o">=</span> <span class="n">p3</span> <span class="o">-</span> <span class="n">c2</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">c2ToC3</span> <span class="o">=</span> <span class="n">c2ToC3</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c2ToC3</span><span class="p">)</span>
+        <span class="n">c2c3_tangent</span> <span class="o">=</span> <span class="n">c2</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">c2ToC3</span> <span class="o">*</span> <span class="n">r</span>
+
+        <span class="c1"># Calculate the three turns</span>
+
+        <span class="c1"># First: Right Turn - from origin to first tangent pt</span>
+        <span class="n">firstRightTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c1</span><span class="p">,</span> <span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c1c3_tangent</span><span class="p">,</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">)</span>
+        <span class="n">numTimeStepsForFirstRightTurn</span> <span class="o">=</span> <span class="n">firstRightTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">firstTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">firstRightTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numTimeStepsForFirstRightTurn</span>
+        <span class="p">}</span>
+        <span class="c1"># Second: Left Turn - on c3 from c1c3 tangent to c2c3 tangent</span>
+        <span class="n">secondLeftTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c3</span><span class="p">,</span> <span class="n">c1c3_tangent</span><span class="p">,</span> <span class="n">c2c3_tangent</span><span class="p">,</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">)</span>
+        <span class="n">numTimeStepsForSecondLeftTurn</span> <span class="o">=</span> <span class="n">secondLeftTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">secondTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">secondLeftTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numTimeStepsForSecondLeftTurn</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Third: Right Turn - from c2c3 tangent to goal pt</span>
+        <span class="n">thirdRightTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c2</span><span class="p">,</span> <span class="n">c2c3_tangent</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">)</span>
+        <span class="n">numTimeStepsForThirdRightTurn</span> <span class="o">=</span> <span class="n">thirdRightTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">thirdTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">thirdRightTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numTimeStepsForThirdRightTurn</span>
+        <span class="p">}</span>
+
+        <span class="n">waypoints</span> <span class="o">=</span> <span class="p">[</span><span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c1c3_tangent</span><span class="p">,</span> <span class="n">c2c3_tangent</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">firstTurn</span><span class="p">,</span> <span class="n">secondTurn</span><span class="p">,</span> <span class="n">thirdTurn</span><span class="p">],</span>
+            <span class="s2">&quot;waypoints&quot;</span><span class="p">:</span> <span class="n">waypoints</span><span class="p">,</span>
+            <span class="s2">&quot;totalDistance&quot;</span><span class="p">:</span> <span class="n">firstRightTurnDistance</span> <span class="o">+</span> <span class="n">secondLeftTurnDistance</span> <span class="o">+</span>
+            <span class="n">thirdRightTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;RLR&quot;</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="DubinsPath.GetLRL"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path.DubinsPath.GetLRL">[docs]</a>    <span class="k">def</span> <span class="nf">GetLRL</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Calculates a path for Dubin&#39;s Car along two left-hand circular arcs separated by a right-hand circular arc.</span>
+
+<span class="sd">        Args: </span>
+<span class="sd">            startPose (numpy array): Initial position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">            goalPose (numpy array): Final position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">        Returns: </span>
+<span class="sd">            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} </span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">c1</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">c2</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">goalPose</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span><span class="p">)</span>
+        <span class="n">c1Toc2</span> <span class="o">=</span> <span class="n">c2</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c1Toc2</span><span class="p">)</span>
+        <span class="n">c1Toc2</span> <span class="o">=</span> <span class="n">c1Toc2</span> <span class="o">/</span> <span class="n">D</span>
+        <span class="n">midPt</span> <span class="o">=</span> <span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">c1Toc2</span> <span class="o">*</span> <span class="n">D</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="c1"># Use definition of perpendicular for vectors (can make this negative to</span>
+        <span class="c1"># get other tangent circle)</span>
+        <span class="n">vec2p3</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">c2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="p">(</span><span class="n">c2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">c1</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span> <span class="o">/</span> <span class="n">D</span>
+        <span class="n">distMidPtToP3</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">D</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="c1"># The center of the tangent circle</span>
+        <span class="n">p3</span> <span class="o">=</span> <span class="n">midPt</span> <span class="o">+</span> <span class="n">vec2p3</span> <span class="o">*</span> <span class="n">distMidPtToP3</span>
+        <span class="n">c3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p3</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p3</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">r</span><span class="p">])</span>
+        <span class="c1"># Find the tangent pt between c1 and c3</span>
+        <span class="n">c1ToC3</span> <span class="o">=</span> <span class="n">p3</span> <span class="o">-</span> <span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">c1ToC3</span> <span class="o">=</span> <span class="n">c1ToC3</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c1ToC3</span><span class="p">)</span>
+        <span class="n">c1c3_tangent</span> <span class="o">=</span> <span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">c1ToC3</span> <span class="o">*</span> <span class="n">r</span>
+
+        <span class="c1"># Find the tangent pt between c2 and c3</span>
+        <span class="n">c2ToC3</span> <span class="o">=</span> <span class="n">p3</span> <span class="o">-</span> <span class="n">c2</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">c2ToC3</span> <span class="o">=</span> <span class="n">c2ToC3</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c2ToC3</span><span class="p">)</span>
+        <span class="n">c2c3_tangent</span> <span class="o">=</span> <span class="n">c2</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">c2ToC3</span> <span class="o">*</span> <span class="n">r</span>
+
+        <span class="c1"># First: Left Turn - from origin to first tangent pt</span>
+        <span class="n">firstLeftTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c1</span><span class="p">,</span> <span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c1c3_tangent</span><span class="p">,</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">)</span>
+        <span class="n">numTimeStepsForFirstLeftTurn</span> <span class="o">=</span> <span class="n">firstLeftTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">firstTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">firstLeftTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numTimeStepsForFirstLeftTurn</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Second: Right Turn - from first tangent pt to second tangent point</span>
+        <span class="n">secondRightTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c3</span><span class="p">,</span> <span class="n">c1c3_tangent</span><span class="p">,</span> <span class="n">c2c3_tangent</span><span class="p">,</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">)</span>
+        <span class="n">numTimeStepsForSecondRightTurn</span> <span class="o">=</span> <span class="n">secondRightTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">secondTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">secondRightTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numTimeStepsForSecondRightTurn</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Third: Left Turn - from second tangent pt to goal pose</span>
+        <span class="n">thirdLeftTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c2</span><span class="p">,</span> <span class="n">c2c3_tangent</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">)</span>
+        <span class="n">numTimeStepsForThirdLeftTurn</span> <span class="o">=</span> <span class="n">thirdLeftTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">thirdTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">thirdLeftTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numTimeStepsForThirdLeftTurn</span>
+        <span class="p">}</span>
+
+        <span class="n">waypoints</span> <span class="o">=</span> <span class="p">[</span><span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c1c3_tangent</span><span class="p">,</span> <span class="n">c2c3_tangent</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">]]</span>
+       
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">firstTurn</span><span class="p">,</span> <span class="n">secondTurn</span><span class="p">,</span> <span class="n">thirdTurn</span><span class="p">],</span>
+            <span class="s2">&quot;waypoints&quot;</span><span class="p">:</span> <span class="n">waypoints</span><span class="p">,</span>
+            <span class="s2">&quot;totalDistance&quot;</span><span class="p">:</span> <span class="n">firstLeftTurnDistance</span> <span class="o">+</span> <span class="n">secondRightTurnDistance</span> <span class="o">+</span>
+            <span class="n">thirdLeftTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;LRL&quot;</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="DubinsPath.GetRSR"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path.DubinsPath.GetRSR">[docs]</a>    <span class="k">def</span> <span class="nf">GetRSR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Calculates a path for Dubin&#39;s Car along two right-hand circular arcs separated by a straight line.</span>
+
+<span class="sd">        Args: </span>
+<span class="sd">            startPose (numpy array): Initial position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">            goalPose (numpy array): Final position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">        Returns: </span>
+<span class="sd">            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} </span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span>
+        <span class="c1"># Pick the &quot;Right&quot; adjacent Circles as on the RSR path they will be the</span>
+        <span class="c1"># circles the car drives on</span>
+        <span class="n">c_start_right</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="n">c_goal_right</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">goalPose</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+        <span class="n">c_start_t</span><span class="p">,</span> <span class="n">c_goal_t</span> <span class="o">=</span> <span class="n">PickTangentLine</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span>
+                                              <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">,</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">)</span>
+
+        <span class="c1"># Turn Right from the original pose to the first tangent point</span>
+        <span class="n">firstRightTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c_start_right</span><span class="p">,</span> <span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c_start_t</span><span class="p">,</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">)</span>
+        <span class="n">numTimeStepsForFirstRightTurn</span> <span class="o">=</span> <span class="n">firstRightTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">firstTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">firstRightTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numTimeStepsForFirstRightTurn</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Turn right from the second tangent point to the final pose</span>
+        <span class="n">secondRightTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c_goal_right</span><span class="p">,</span> <span class="n">c_goal_t</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">)</span>
+        <span class="n">numTimeStepsForSecondrightTurn</span> <span class="o">=</span> <span class="n">secondRightTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">secondTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">secondRightTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numTimeStepsForSecondrightTurn</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Go straight between the two circles</span>
+        <span class="n">straightLineDistance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c_goal_right</span> <span class="o">-</span> <span class="n">c_start_right</span><span class="p">)</span>
+        <span class="n">numTimeStepsForStraightLine</span> <span class="o">=</span> <span class="n">straightLineDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">straightSegment</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">STRAIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">straightLineDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numTimeStepsForStraightLine</span>
+        <span class="p">}</span>
+        <span class="n">waypoints</span> <span class="o">=</span> <span class="p">[</span><span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c_start_t</span><span class="p">,</span> <span class="n">c_goal_t</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">firstTurn</span><span class="p">,</span> <span class="n">straightSegment</span><span class="p">,</span> <span class="n">secondTurn</span><span class="p">],</span>
+            <span class="s2">&quot;waypoints&quot;</span><span class="p">:</span> <span class="n">waypoints</span><span class="p">,</span>
+            <span class="s2">&quot;totalDistance&quot;</span><span class="p">:</span> <span class="n">firstRightTurnDistance</span> <span class="o">+</span> <span class="n">straightLineDistance</span> <span class="o">+</span>
+            <span class="n">secondRightTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;RSR&quot;</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="DubinsPath.GetLSL"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path.DubinsPath.GetLSL">[docs]</a>    <span class="k">def</span> <span class="nf">GetLSL</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Calculates a path for Dubin&#39;s Car along two left-hand circular arcs separated by a straight line.</span>
+
+<span class="sd">        Args: </span>
+<span class="sd">            startPose (numpy array): Initial position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">            goalPose (numpy array): Final position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">        Returns: </span>
+<span class="sd">            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} </span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span>
+        <span class="c1"># Pick the &quot;Left&quot; adjacent Circles as on the LSL path they will be the</span>
+        <span class="c1"># circles the car drives on</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">c_start_left</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">c_goal_left</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">goalPose</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+        <span class="n">c_start_t</span><span class="p">,</span> <span class="n">c_goal_t</span> <span class="o">=</span> <span class="n">PickTangentLine</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span>
+                                              <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">,</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">)</span>
+        <span class="c1"># Turn LEFT from the original pose to the first tangent point</span>
+        <span class="n">firstLeftTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c_start_left</span><span class="p">,</span> <span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c_start_t</span><span class="p">,</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">)</span>
+        <span class="n">numStepsFirstLeftTurn</span> <span class="o">=</span> <span class="n">firstLeftTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">firstTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">firstLeftTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numStepsFirstLeftTurn</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Calculate straight section</span>
+        <span class="n">straightSegmentDistance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c_goal_left</span> <span class="o">-</span> <span class="n">c_start_left</span><span class="p">)</span>
+        <span class="n">numStepsStraightSegment</span> <span class="o">=</span> <span class="n">straightSegmentDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+
+        <span class="n">straightSegment</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">STRAIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">straightSegmentDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numStepsStraightSegment</span>
+        <span class="p">}</span>
+        <span class="n">secondLeftTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c_goal_left</span><span class="p">,</span> <span class="n">c_goal_t</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">)</span>
+        <span class="n">numStepsSecondLeftTurn</span> <span class="o">=</span> <span class="n">secondLeftTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+
+        <span class="n">secondTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">secondLeftTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numStepsSecondLeftTurn</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">firstTurn</span><span class="p">,</span> <span class="n">straightSegment</span><span class="p">,</span> <span class="n">secondTurn</span><span class="p">],</span>
+            <span class="s2">&quot;waypoints&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c_start_t</span><span class="p">,</span> <span class="n">c_goal_t</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">]],</span>
+            <span class="s2">&quot;totalDistance&quot;</span><span class="p">:</span> <span class="n">firstLeftTurnDistance</span> <span class="o">+</span> <span class="n">straightSegmentDistance</span> <span class="o">+</span>
+            <span class="n">secondLeftTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;LSL&quot;</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="DubinsPath.GetLSR"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path.DubinsPath.GetLSR">[docs]</a>    <span class="k">def</span> <span class="nf">GetLSR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Calculates a path for Dubin&#39;s Car along a path that takes a left-hand circular arc, a straight line and a right-hand circular arc.</span>
+
+<span class="sd">        Args: </span>
+<span class="sd">            startPose (numpy array): Initial position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">            goalPose (numpy array): Final position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">        Returns: </span>
+<span class="sd">            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} </span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span>
+        <span class="c1"># Pick the &quot;Left&quot; adjacent Circles as on the LSL path they will be the</span>
+        <span class="c1"># circles the car drives on</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">c_start_left</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="n">c_goal_right</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">goalPose</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+        <span class="c1"># Calculate the tangent points</span>
+        <span class="n">tangentPoints</span><span class="p">,</span> <span class="n">tangentLines</span> <span class="o">=</span> <span class="n">GetInnerTangentPointsAndLines</span><span class="p">(</span>
+            <span class="n">c_start_left</span><span class="p">,</span> <span class="n">c_goal_right</span><span class="p">)</span>
+
+        <span class="c1"># Pick the closest pair of tangent points on the same tangent line</span>
+        <span class="n">c_start_t</span> <span class="o">=</span> <span class="n">tangentLines</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">c_goal_t</span> <span class="o">=</span> <span class="n">tangentLines</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">firstLeftTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c_start_left</span><span class="p">,</span> <span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c_start_t</span><span class="p">,</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">)</span>
+        <span class="n">numStepsFirstLeftTurn</span> <span class="o">=</span> <span class="n">firstLeftTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">firstTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">firstLeftTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numStepsFirstLeftTurn</span>
+        <span class="p">}</span>
+
+        <span class="n">straightSegmentDistance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c_start_t</span> <span class="o">-</span> <span class="n">c_goal_t</span><span class="p">)</span>
+        <span class="n">numStepsStraightSegment</span> <span class="o">=</span> <span class="n">straightSegmentDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+
+        <span class="n">straightSegment</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">STRAIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">straightSegmentDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numStepsStraightSegment</span>
+        <span class="p">}</span>
+        <span class="n">secondRightTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c_goal_right</span><span class="p">,</span> <span class="n">c_goal_t</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">)</span>
+        <span class="n">numStepsSecondRightTurn</span> <span class="o">=</span> <span class="n">secondRightTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">secondTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">secondRightTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numStepsSecondRightTurn</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">firstTurn</span><span class="p">,</span> <span class="n">straightSegment</span><span class="p">,</span> <span class="n">secondTurn</span><span class="p">],</span>
+            <span class="s2">&quot;waypoints&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c_start_t</span><span class="p">,</span> <span class="n">c_goal_t</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">]],</span>
+            <span class="s2">&quot;totalDistance&quot;</span><span class="p">:</span> <span class="n">firstLeftTurnDistance</span> <span class="o">+</span> <span class="n">straightSegmentDistance</span> <span class="o">+</span>
+            <span class="n">secondRightTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;LSR&quot;</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="DubinsPath.GetRSL"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path.DubinsPath.GetRSL">[docs]</a>    <span class="k">def</span> <span class="nf">GetRSL</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Calculates a path for Dubin&#39;s Car along a path that takes a right-hand circular arc, a straight line and a left-hand circular arc.</span>
+
+<span class="sd">        Args: </span>
+<span class="sd">            startPose (numpy array): Initial position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">            goalPose (numpy array): Final position of Dubin&#39;s car (x,y,theta)</span>
+<span class="sd">        Returns: </span>
+<span class="sd">            dict: A dictionary with the form {path: [path elements], waypoints: [waypoints]} </span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">turningRadius</span>
+        <span class="c1"># Pick the &quot;Left&quot; adjacent Circles as on the LSL path they will be the</span>
+        <span class="c1"># circles the car drives on</span>
+        <span class="n">c_start_right</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">startPose</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">c_goal_left</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">goalPose</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+        <span class="c1"># Calculate the tangent points</span>
+        <span class="n">tangentPoints</span><span class="p">,</span> <span class="n">tangentLines</span> <span class="o">=</span> <span class="n">GetInnerTangentPointsAndLines</span><span class="p">(</span>
+            <span class="n">c_start_right</span><span class="p">,</span> <span class="n">c_goal_left</span><span class="p">)</span>
+
+        <span class="c1"># Pick the closest pair of tangent points on the same tangent line</span>
+        <span class="n">c_start_t</span> <span class="o">=</span> <span class="n">tangentLines</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">c_goal_t</span> <span class="o">=</span> <span class="n">tangentLines</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">firstRightTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c_start_right</span><span class="p">,</span> <span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c_start_t</span><span class="p">,</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">)</span>
+        <span class="n">numStepsFirstLeftTurn</span> <span class="o">=</span> <span class="n">firstRightTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">firstTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">firstRightTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numStepsFirstLeftTurn</span>
+        <span class="p">}</span>
+
+        <span class="n">straightSegmentDistance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c_goal_t</span> <span class="o">-</span> <span class="n">c_start_t</span><span class="p">)</span>
+        <span class="n">numStepsStraightSegment</span> <span class="o">=</span> <span class="n">straightSegmentDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">straightSegment</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">STRAIGHT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">straightSegmentDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numStepsStraightSegment</span>
+        <span class="p">}</span>
+
+        <span class="n">secondLeftTurnDistance</span> <span class="o">=</span> <span class="n">CalcDirectionalArcLength</span><span class="p">(</span>
+            <span class="n">c_goal_left</span><span class="p">,</span> <span class="n">c_goal_t</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">)</span>
+
+        <span class="n">numStepsSecondLeftTurn</span> <span class="o">=</span> <span class="n">secondLeftTurnDistance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">car</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">secondTurn</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="n">secondLeftTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;numSteps&quot;</span><span class="p">:</span> <span class="n">numStepsSecondLeftTurn</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">firstTurn</span><span class="p">,</span> <span class="n">straightSegment</span><span class="p">,</span> <span class="n">secondTurn</span><span class="p">],</span>
+            <span class="s2">&quot;waypoints&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c_start_t</span><span class="p">,</span> <span class="n">c_goal_t</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">]],</span>
+            <span class="s2">&quot;totalDistance&quot;</span><span class="p">:</span> <span class="n">firstRightTurnDistance</span> <span class="o">+</span> <span class="n">straightSegmentDistance</span> <span class="o">+</span>
+            <span class="n">secondLeftTurnDistance</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;RSL&quot;</span>
+        <span class="p">}</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Control Algorithms.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

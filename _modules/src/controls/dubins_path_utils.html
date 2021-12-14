@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.controls.dubins_path_utils &mdash; Control Algorithms 0.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> Control Algorithms
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../src.controls.html">Controls</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../src.dynamics.html">Dynamics</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Control Algorithms</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>src.controls.dubins_path_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.controls.dubins_path_utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This file contains helper functions needed for the Dubins Path Control Algorithm </span>
+<span class="sd">module. </span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">atan</span><span class="p">,</span> <span class="n">asin</span><span class="p">,</span> <span class="n">atan2</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">acos</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+
+
+<div class="viewcode-block" id="Direction"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path_utils.Direction">[docs]</a><span class="k">class</span> <span class="nc">Direction</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">LEFT</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">RIGHT</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">STRAIGHT</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="calculateAngleBetween"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path_utils.calculateAngleBetween">[docs]</a><span class="k">def</span> <span class="nf">calculateAngleBetween</span><span class="p">(</span><span class="n">v1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">v2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Calculates the signed angle between two pose vectors</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        v1 (np.ndarry): start pose vector</span>
+<span class="sd">        v2 (np.ndarray): end pose vector</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Float: The signed angle between v1 and v2 </span>
+<span class="sd">        </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Calculate the signed angle between two vectors (can potentially be</span>
+    <span class="c1"># done with the &quot;perpendicular dot product&quot; but here is accomplished</span>
+    <span class="c1"># by utilizing code inspired by p5.js source code for the angleBetween</span>
+    <span class="c1"># function)</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">acos</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">v1</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v2</span><span class="p">))))</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">))</span> <span class="ow">or</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">theta</span></div>
+
+
+<div class="viewcode-block" id="CalcDirectionalArcLength"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path_utils.CalcDirectionalArcLength">[docs]</a><span class="k">def</span> <span class="nf">CalcDirectionalArcLength</span><span class="p">(</span><span class="n">c1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">p2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">p3</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                             <span class="n">direction</span><span class="p">:</span> <span class="n">Direction</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;Calculates the arc length between two points on a circle</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        c1 (np.ndarray): input circle (center_x,center_y,radius)</span>
+<span class="sd">        p2 (np.ndarray): point one on the circle (x,y)</span>
+<span class="sd">        p3 (np.ndarray): point two on the circle (x,y)</span>
+<span class="sd">        direction (Direction): left or right </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Float: the arc length between p2 and p3</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">p1</span> <span class="o">=</span> <span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">c1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">p2</span> <span class="o">-</span> <span class="n">p1</span>
+    <span class="n">v2</span> <span class="o">=</span> <span class="n">p3</span> <span class="o">-</span> <span class="n">p1</span>
+
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">atan2</span><span class="p">(</span><span class="n">v2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v2</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">atan2</span><span class="p">(</span><span class="n">v1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">theta</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">direction</span> <span class="o">==</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">:</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+    <span class="k">elif</span> <span class="n">theta</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">direction</span> <span class="o">==</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">:</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+    <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">theta</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CalcDirectionArcAngle"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path_utils.CalcDirectionArcAngle">[docs]</a><span class="k">def</span> <span class="nf">CalcDirectionArcAngle</span><span class="p">(</span><span class="n">c1</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">p2</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">p3</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span><span class="n">Direction</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Calculates the directional angle between two points on a circle</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        c1 (np.ndarray): input circle (center_x,center_y,radius)</span>
+<span class="sd">        p2 (np.ndarray): starting point on the circle circumference (x,y)</span>
+<span class="sd">        p3 (np.ndarray): ending point on the circle circumference (x,y)</span>
+<span class="sd">        direction (Direction): left or right </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Float: the (directional) arc angle between p2 and p3</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">p1</span> <span class="o">=</span> <span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">p2</span> <span class="o">-</span> <span class="n">p1</span>
+    <span class="n">v2</span> <span class="o">=</span> <span class="n">p3</span> <span class="o">-</span> <span class="n">p1</span>
+
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">atan2</span><span class="p">(</span><span class="n">v2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v2</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">atan2</span><span class="p">(</span><span class="n">v1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">theta</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">direction</span> <span class="o">==</span> <span class="n">Direction</span><span class="o">.</span><span class="n">LEFT</span><span class="p">:</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+    <span class="k">elif</span> <span class="n">theta</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">direction</span> <span class="o">==</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">:</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+    <span class="k">return</span> <span class="n">theta</span></div>
+
+
+<div class="viewcode-block" id="GetOuterTangentPointsAndLines"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path_utils.GetOuterTangentPointsAndLines">[docs]</a><span class="k">def</span> <span class="nf">GetOuterTangentPointsAndLines</span><span class="p">(</span><span class="n">c1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">c2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Calculates the outer tangent points and lines between two circles</span>
+<span class="sd">    https://en.wikipedia.org/wiki/Tangent_lines_to_circles</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        c1 (np.ndarray): circle 1 (center_x,center_y,radius)</span>
+<span class="sd">        c2 (np.ndarray): circle 2 (center_x,center_y,radius)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple: (4 potential tangent points, Outer Tangent lines between tangent points)</span>
+<span class="sd">               ([c1 up-right, c1 down-left, c2 up-right, c2 down-left], </span>
+<span class="sd">               [[c1 up-right, c2 up-right], [c1 down-left, c2 down-left]])</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Calculate Outer tangents</span>
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">r1</span> <span class="o">=</span> <span class="n">c1</span>
+    <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">r2</span> <span class="o">=</span> <span class="n">c2</span>
+    <span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-20</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="o">-</span><span class="n">atan</span><span class="p">((</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">eps</span><span class="p">))</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Dubins path circles are always the same radius</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">-</span> <span class="n">beta</span>
+
+    <span class="n">x3_1</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">r1</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+    <span class="n">x3_2</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">-</span> <span class="n">r1</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+    <span class="n">y3_1</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">r1</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+    <span class="n">y3_2</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">-</span> <span class="n">r1</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+
+    <span class="n">x4_1</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">+</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+    <span class="n">x4_2</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">-</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+    <span class="n">y4_1</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">+</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+    <span class="n">y4_2</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">-</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+
+    <span class="n">p1</span> <span class="o">=</span> <span class="p">[</span><span class="n">x3_1</span><span class="p">,</span> <span class="n">y3_1</span><span class="p">]</span>
+    <span class="n">p2</span> <span class="o">=</span> <span class="p">[</span><span class="n">x3_2</span><span class="p">,</span> <span class="n">y3_2</span><span class="p">]</span>
+    <span class="n">p3</span> <span class="o">=</span> <span class="p">[</span><span class="n">x4_1</span><span class="p">,</span> <span class="n">y4_1</span><span class="p">]</span>
+    <span class="n">p4</span> <span class="o">=</span> <span class="p">[</span><span class="n">x4_2</span><span class="p">,</span> <span class="n">y4_2</span><span class="p">]</span>
+
+    <span class="n">tangentPonts</span> <span class="o">=</span> <span class="p">[</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">p3</span><span class="p">,</span> <span class="n">p4</span><span class="p">]</span>
+    <span class="n">outerTangentLines</span> <span class="o">=</span> <span class="p">[[</span><span class="n">p1</span><span class="p">,</span> <span class="n">p3</span><span class="p">],</span> <span class="p">[</span><span class="n">p2</span><span class="p">,</span> <span class="n">p4</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">tangentPonts</span><span class="p">,</span> <span class="n">outerTangentLines</span></div>
+
+
+<div class="viewcode-block" id="GetInnerTangentPointsAndLines"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path_utils.GetInnerTangentPointsAndLines">[docs]</a><span class="k">def</span> <span class="nf">GetInnerTangentPointsAndLines</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Calculates the inner tangent points and lines between two circles</span>
+<span class="sd">    https://math.stackexchange.com/questions/719758/inner-tangent-between-two-circles-formula</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        c1 (np.ndarray): circle 1 (center_x,center_y,radius)</span>
+<span class="sd">        c2 (np.ndarray): circle 2 (center_x,center_y,radius)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple: (4 potential tangent points, Outer Tangent lines between tangent points)</span>
+<span class="sd">               ([c1 top, c2 bottom, c1 bottom, c2 top], </span>
+<span class="sd">               [[c1 top, c2 bottom], [c1 bottom, c2 top]])</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">r1</span> <span class="o">=</span> <span class="n">c1</span>
+    <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">r2</span> <span class="o">=</span> <span class="n">c2</span>
+    <span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-20</span>
+    <span class="n">hypotenuse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c1</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">c2</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">opposite</span> <span class="o">=</span> <span class="n">r1</span> <span class="o">+</span> <span class="n">r2</span>
+    <span class="k">if</span> <span class="n">opposite</span> <span class="o">&gt;</span> <span class="n">hypotenuse</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cannot compute arcsin of this scenario&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="c1"># Get the angle betwen the x-axis to the line from the circle center to its</span>
+    <span class="c1"># tangent point and shift by the rotational offset between the centers of the</span>
+    <span class="c1"># 2 circles</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">atan2</span><span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span> <span class="o">+</span> <span class="n">asin</span><span class="p">(</span>
+        <span class="n">opposite</span> <span class="o">/</span> <span class="n">hypotenuse</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="n">p1x</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">r1</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">p1y</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">r1</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">p2x</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">+</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">phi</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">p2y</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">+</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">phi</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">p1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p1x</span><span class="p">,</span> <span class="n">p1y</span><span class="p">])</span>
+    <span class="n">p2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p2x</span><span class="p">,</span> <span class="n">p2y</span><span class="p">])</span>
+
+    <span class="c1"># Flip phi to point to the other set of tangent points</span>
+    <span class="n">phi2</span> <span class="o">=</span> <span class="n">atan2</span><span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span> <span class="o">-</span> <span class="n">asin</span><span class="p">(</span><span class="n">opposite</span> <span class="o">/</span> <span class="n">hypotenuse</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">p3x</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">r1</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">phi2</span><span class="p">)</span>
+    <span class="n">p3y</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">r1</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">phi2</span><span class="p">)</span>
+    <span class="n">p4x</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">+</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">phi2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">p4y</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">+</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">phi2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">p3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p3x</span><span class="p">,</span> <span class="n">p3y</span><span class="p">])</span>
+    <span class="n">p4</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p4x</span><span class="p">,</span> <span class="n">p4y</span><span class="p">])</span>
+
+    <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">p3</span><span class="p">,</span> <span class="n">p4</span><span class="p">])</span>
+    <span class="n">innerTangentLines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p3</span><span class="p">,</span> <span class="n">p4</span><span class="p">])])</span>
+    <span class="k">return</span> <span class="n">points</span><span class="p">,</span> <span class="n">innerTangentLines</span></div>
+
+
+<div class="viewcode-block" id="GetAdjacentCircles"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path_utils.GetAdjacentCircles">[docs]</a><span class="k">def</span> <span class="nf">GetAdjacentCircles</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Given a pose, p (x, y, theta) and a turning radius r, calculate the dubins circles around the pose</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (np.ndarray): the pose of the car (x,y,theta)</span>
+<span class="sd">        r (float): turning radius of the car</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        List: Two turning circles [[x1_center,y1_center,r1],[x2_center,y2_center,r2]]</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">p</span>
+    <span class="n">cx_right</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">r</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">cy_right</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">r</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">cx_left</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">r</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">cy_left</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">r</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cx_right</span><span class="p">,</span> <span class="n">cy_right</span><span class="p">,</span> <span class="n">r</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cx_left</span><span class="p">,</span> <span class="n">cy_left</span><span class="p">,</span> <span class="n">r</span><span class="p">])]</span></div>
+
+
+<div class="viewcode-block" id="PickTangentLine"><a class="viewcode-back" href="../../../src.controls.html#src.controls.dubins_path_utils.PickTangentLine">[docs]</a><span class="k">def</span> <span class="nf">PickTangentLine</span><span class="p">(</span><span class="n">startPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">goalPose</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                    <span class="n">startCircleDirection</span><span class="p">:</span> <span class="n">Direction</span><span class="p">,</span>
+                    <span class="n">goalCircleDirection</span><span class="p">:</span> <span class="n">Direction</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A function that picks the correct tangent line for a dubins car to travel</span>
+<span class="sd">    over between a start pose and an end pose when knowing which turns it is</span>
+<span class="sd">    supposed to make (i.e. if it knows its RSR vs LSR)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        startPose (np.ndarray): the start pose of the car (x,y,theta)</span>
+<span class="sd">        goalPose (np.ndarray): the goal pose of the car (x,y,theta)</span>
+<span class="sd">        radius (float): the turning radius of the car</span>
+<span class="sd">        startCircleDirection (Direction): first turning direction</span>
+<span class="sd">        goalCircleDirection (Direction): end turning direction</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        List: the pair of points that creates the tangent line to travel from the </span>
+<span class="sd">              start circle to the goal circle [[x,y],[x,y]]</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">theta1</span> <span class="o">=</span> <span class="n">startPose</span>
+    <span class="c1"># Pick the correct start circle</span>
+    <span class="n">start_circle_right</span><span class="p">,</span> <span class="n">start_circle_left</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span>
+        <span class="n">startPose</span><span class="p">,</span> <span class="n">radius</span><span class="p">)</span>
+    <span class="n">start_circle</span> <span class="o">=</span> <span class="n">start_circle_right</span> <span class="k">if</span> <span class="n">startCircleDirection</span> <span class="o">==</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span> <span class="k">else</span> <span class="n">start_circle_left</span>
+    <span class="c1"># Pick the correct goal circle</span>
+    <span class="n">goal_circle_right</span><span class="p">,</span> <span class="n">goal_circle_left</span> <span class="o">=</span> <span class="n">GetAdjacentCircles</span><span class="p">(</span><span class="n">goalPose</span><span class="p">,</span> <span class="n">radius</span><span class="p">)</span>
+    <span class="n">goal_circle</span> <span class="o">=</span> <span class="n">goal_circle_right</span> <span class="k">if</span> <span class="n">goalCircleDirection</span> <span class="o">==</span> <span class="n">Direction</span><span class="o">.</span><span class="n">RIGHT</span> <span class="k">else</span> <span class="n">goal_circle_left</span>
+
+    <span class="c1"># Get the tangent points and lines between the two circles</span>
+    <span class="n">tangentPoints</span><span class="p">,</span> <span class="n">tangentLines</span> <span class="o">=</span> <span class="n">GetOuterTangentPointsAndLines</span><span class="p">(</span>
+        <span class="n">start_circle</span><span class="p">,</span> <span class="n">goal_circle</span><span class="p">)</span>
+
+    <span class="c1"># for the two possible tangent lines, rotate the car as if it was traveling</span>
+    <span class="c1"># to that tangent point and see what direction it will be facing pick</span>
+    <span class="c1"># the tangent point that when traveled to will be pointing closer to the target POSITION</span>
+    <span class="n">start_circle_tangent_1</span> <span class="o">=</span> <span class="n">tangentLines</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">start_circle_tangent_2</span> <span class="o">=</span> <span class="n">tangentLines</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Get the &quot;rotation&quot; from the start pose to each tangent point</span>
+    <span class="n">startHeading</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cos</span><span class="p">(</span><span class="n">theta1</span><span class="p">),</span> <span class="n">sin</span><span class="p">(</span><span class="n">theta1</span><span class="p">)])</span>
+    <span class="c1"># Get the normalized direction pointing from the start pt to the goal pt</span>
+    <span class="n">start2goal</span> <span class="o">=</span> <span class="n">goalPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> 
+    <span class="n">start2goal</span> <span class="o">=</span> <span class="n">start2goal</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">start2goal</span><span class="p">)</span>
+
+    <span class="c1"># Calculate the orientation at each tangent point</span>
+    <span class="n">orientation_at_tangent_1</span> <span class="o">=</span> <span class="n">theta1</span> <span class="o">+</span> <span class="n">CalcDirectionArcAngle</span><span class="p">(</span><span class="n">start_circle</span><span class="p">,</span><span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span><span class="n">start_circle_tangent_1</span><span class="p">,</span> <span class="n">startCircleDirection</span><span class="p">)</span>
+    <span class="n">orientation_at_tangent_2</span> <span class="o">=</span> <span class="n">theta1</span> <span class="o">+</span> <span class="n">CalcDirectionArcAngle</span><span class="p">(</span><span class="n">start_circle</span><span class="p">,</span><span class="n">startPose</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span><span class="n">start_circle_tangent_2</span><span class="p">,</span> <span class="n">startCircleDirection</span><span class="p">)</span>
+    <span class="c1"># Convert theta orientation to direction vectors</span>
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cos</span><span class="p">(</span><span class="n">orientation_at_tangent_1</span><span class="p">),</span> <span class="n">sin</span><span class="p">(</span><span class="n">orientation_at_tangent_1</span><span class="p">)])</span>
+    <span class="n">v2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cos</span><span class="p">(</span><span class="n">orientation_at_tangent_2</span><span class="p">),</span> <span class="n">sin</span><span class="p">(</span><span class="n">orientation_at_tangent_2</span><span class="p">)])</span>
+    <span class="c1"># Calculate the error between the would be orientation at a given tangent point vs the desired heading of start2goal</span>
+    
+    <span class="n">thetaErr1</span> <span class="o">=</span> <span class="n">calculateAngleBetween</span><span class="p">(</span><span class="n">start2goal</span><span class="p">,</span> <span class="n">v1</span><span class="p">)</span>
+    <span class="n">thetaErr2</span> <span class="o">=</span> <span class="n">calculateAngleBetween</span><span class="p">(</span><span class="n">start2goal</span><span class="p">,</span> <span class="n">v2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">thetaErr1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">thetaErr2</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">tangentLines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tangentLines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Control Algorithms.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
