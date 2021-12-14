@@ -1,12 +1,27 @@
+"""
+The DubinsCar class models the dynamics of a Dubin's car as well as stores
+the state of a single vehicle and allows updates to the pose via the step 
+function
+"""
 import math
+from typing_extensions import Self
 import numpy as np
 class DubinsCar:
+    '''Initializes a Dubins Car Instance
 
-    def __init__(self, l, x, y, theta, initialPhi, maxSpeed=5) -> None:
-        """
-        l is the length of the car
-        maxSpeed is the max speed of the car
-        """
+    Args:
+        l: length of the car.
+        x: initial x position.
+        y: initial y position.
+        theta: initial orientation.
+        initialPhi: initial wheel orientation.
+        maxSpeed: the max speed of the car.
+    Returns:
+        An instance of DubinsCar 
+        
+    '''
+
+    def __init__(self, l:float, x:float, y:float, theta:float, initialPhi:float, maxSpeed:float=5) -> Self:
         self.l = l
         self.speed = maxSpeed
         self.phi = initialPhi
@@ -17,9 +32,11 @@ class DubinsCar:
         self.turningRadius = self.l / math.tan(self.maxSteer)
 
 
-    def step(self, u) -> None:
-        '''
-        u is the control input that controls phi
+    def step(self, u:float) -> None:
+        ''' Steps the dynamics forwards one time step with the specified turn angle u
+        
+        Args
+            u: is the control input that controls phi
         '''
         self.phi = u
         x_dot =  self.speed*np.cos(self.theta)
@@ -29,9 +46,17 @@ class DubinsCar:
         self.theta = self.theta + theta_dot
 
 
-    def calcThetaError(self, goalPoint):
-        """
-        Given a target point, calculate the theta error
+    def calcThetaError(self, goalPoint:np.ndarray) -> float:
+        """Calculates the directional angle error between the direction the car
+        is facing and where it should be facing if it were to travel straight 
+        to the goal point
+        
+        Args:
+            goalPoint (numpy array): the (x,y) position that the car should travel to
+        
+        Returns:
+            float: The signed angle theta between the car's direction and the direction towards the goal
+
         """
         # This step is highly important - get the vector pointing from the car 
         # to the target point
