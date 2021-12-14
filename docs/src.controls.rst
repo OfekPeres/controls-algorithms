@@ -1,7 +1,7 @@
-src.controls package
+Controls
 ====================
 
-src.controls.bang\_bang module
+BangBang
 ------------------------------
 
 .. automodule:: src.controls.bang_bang
@@ -9,7 +9,7 @@ src.controls.bang\_bang module
    :undoc-members:
    :show-inheritance:
 
-src.controls.converter module
+Converter
 -----------------------------
 
 .. automodule:: src.controls.converter
@@ -17,7 +17,7 @@ src.controls.converter module
    :undoc-members:
    :show-inheritance:
 
-src.controls.dubins\_path module
+Dubins Path
 --------------------------------
 
 .. automodule:: src.controls.dubins_path
@@ -25,7 +25,7 @@ src.controls.dubins\_path module
    :undoc-members:
    :show-inheritance:
 
-src.controls.dubins\_path\_utils module
+Dubins Path Utils
 ---------------------------------------
 
 .. automodule:: src.controls.dubins_path_utils
@@ -34,7 +34,7 @@ src.controls.dubins\_path\_utils module
    :show-inheritance:
 
 
-src.controls.pid module
+PID
 -----------------------
 
 .. automodule:: src.controls.pid
