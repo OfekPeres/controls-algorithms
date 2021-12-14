@@ -5,3 +5,7 @@ __pycache__
 .pytest_cache
 .DS_Store
 plots/
+
+_build/
+_static/
+_templates/
