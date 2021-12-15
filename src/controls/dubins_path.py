@@ -10,7 +10,6 @@ from math import atan2, cos, sin, acos, sqrt
 from pprint import pprint
 from .dubins_path_utils import CalcDirectionalArcLength, Direction, GetAdjacentCircles, GetInnerTangentPointsAndLines, GetOuterTangentPointsAndLines, PickTangentLine
 import numpy as np
-import matplotlib.pyplot as plt
 from ..dynamics.dubins_car import DubinsCar
 
 class DubinsPath:
